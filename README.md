@@ -12,6 +12,9 @@ Data stored in it will be received from microcontrollers thanks to the nRF905 ra
 ### Graphical user interface
 Qt framework is a widget toolkit for creating graphical user interface. Well-equipped set of libraries allows quick and effective GUI development.
 
+<img src="https://github.com/Krystian-Matusiak/Praca_inzynierska/blob/master/GUI.png" >
+
+
 ****
 ### Documentation
 TODO
