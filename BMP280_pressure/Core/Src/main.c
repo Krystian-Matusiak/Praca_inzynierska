@@ -78,22 +78,59 @@ int _write(int file , char *ptr , int len){
   HAL_UART_Transmit(&huart1 , ptr , len , 50);
   return len;
 }
+uint8_t reg_T1l=0x88;
+uint8_t reg_T2l=0x8A;
+uint8_t reg_T3l=0x8C;
+uint8_t reg_P1l=0x8E;
+uint8_t reg_P2l=0x90;
+uint8_t reg_P3l=0x92;
+uint8_t reg_P4l=0x94;
+uint8_t reg_P5l=0x96;
+uint8_t reg_P6l=0x98;
+uint8_t reg_P7l=0x9A;
+uint8_t reg_P8l=0x9C;
+uint8_t reg_P9l=0x9E;
 
+uint8_t reg_T1m=0x89;
+uint8_t reg_T2m=0x8B;
+uint8_t reg_T3m=0x8D;
+uint8_t reg_P1m=0x8F;
+uint8_t reg_P2m=0x91;
+uint8_t reg_P3m=0x93;
+uint8_t reg_P4m=0x95;
+uint8_t reg_P5m=0x97;
+uint8_t reg_P6m=0x99;
+uint8_t reg_P7m=0x9B;
+uint8_t reg_P8m=0x9D;
+uint8_t reg_P9m=0x9F;
 
-    uint16_t dig_T1=27504;
-    int16_t  dig_T2=26435;
-    int16_t  dig_T3=-1000;
-    uint16_t dig_P1=36477;
-    int16_t  dig_P2=-10685;
-    int16_t  dig_P3=3024;
-    int16_t  dig_P4=2855;
-    int16_t  dig_P5=140;
-    int16_t  dig_P6=-7;
-    int16_t  dig_P7=15500;
-    int16_t  dig_P8=-14600;
-    int16_t  dig_P9=6000;
+uint8_t dig_T12[2];
+int8_t  dig_T22[2];
+int8_t  dig_T32[2];
+uint8_t dig_P12[2];
+int8_t  dig_P22[2];
+int8_t  dig_P32[2];
+int8_t  dig_P42[2];
+int8_t  dig_P52[2];
+int8_t  dig_P62[2];
+int8_t  dig_P72[2];
+int8_t  dig_P82[2];
+int8_t  dig_P92[2];
 
-    uint16_t addr;
+uint16_t dig_T1;
+int16_t  dig_T2;
+int16_t  dig_T3;
+uint16_t dig_P1;
+int16_t  dig_P2;
+int16_t  dig_P3;
+int16_t  dig_P4;
+int16_t  dig_P5;
+int16_t  dig_P6;
+int16_t  dig_P7;
+int16_t  dig_P8;
+int16_t  dig_P9;
+
+uint16_t addr;
 
 
 static int read_data( uint8_t addr, uint8_t * value , uint8_t len) {
@@ -108,7 +145,82 @@ static int read_data( uint8_t addr, uint8_t * value , uint8_t len) {
 	return 1;
 }
 
+void setConstants(){
+	  // DIG_Tx/Px
 
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_T1l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_T12, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_T2l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_T22, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_T3l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_T32, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_P1l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_P12, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_P2l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_P22, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_P3l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_P32, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_P4l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_P42, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_P5l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_P52, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_P6l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_P62, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_P7l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_P72, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_P8l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_P82, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
+	  HAL_SPI_Transmit(&hspi1, &reg_P9l, 1, 100);
+	  HAL_SPI_Receive(&hspi1, &dig_P92, 2, 100);
+	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
+
+	  dig_T1 = dig_T12[0] | (dig_T12[1]<<8);
+	  dig_T2 = dig_T22[0] | (dig_T22[1]<<8);
+	  dig_T3 = dig_T32[0] | (dig_T32[1]<<8);
+	  dig_P1 = dig_P12[0] | (dig_P12[1]<<8);
+	  dig_P2 = dig_P22[0] | (dig_P22[1]<<8);
+	  dig_P3 = dig_P32[0] | (dig_P32[1]<<8);
+	  dig_P4 = dig_P42[0] | (dig_P42[1]<<8);
+	  dig_P5 = dig_P52[0] | (dig_P52[1]<<8);
+	  dig_P6 = dig_P62[0] | (dig_P62[1]<<8);
+	  dig_P7 = dig_P72[0] | (dig_P72[1]<<8);
+	  dig_P8 = dig_P82[0] | (dig_P82[1]<<8);
+	  dig_P9 = dig_P92[0] | (dig_P92[1]<<8);
+}
 
 /* USER CODE END 0 */
 
@@ -154,12 +266,6 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-
-  uint8_t press1=0;
-  uint8_t press2=0;
-  uint8_t press3=0;
-  uint32_t press=0;
-
   uint8_t P[3];
   uint32_t PP=0;
 
@@ -171,13 +277,11 @@ int main(void)
 
   int i=0;
   HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
-  int cos=0;
 
+  uint8_t write_F4=0x74;
+  uint8_t overwrite_F4=0xFF;
 
-  uint8_t s1=0xE4;
-  uint8_t s2=0x03;
-
-  uint8_t s11=0xF4;
+  uint8_t read_F4=0xF4;
   uint8_t czytaj=0;
 
   int var1;
@@ -185,41 +289,37 @@ int main(void)
   int Var1;
   int Var2;
 
-  int t_fine=0;
-  int temp=0;
-  int cis=0;
-  int Cis=0;
+  int32_t t_fine=0;
+  int32_t temp=0;
+  int32_t cis=0;
+
+
+
+  setConstants();
 
   while (1)
   {
-
-
 	  // MODE
 	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
 
-	  HAL_SPI_Transmit(&hspi1, &s11, 1, HAL_MAX_DELAY);
+	  HAL_SPI_Transmit(&hspi1, &read_F4, 1, HAL_MAX_DELAY);
 	  HAL_SPI_Receive(&hspi1, &czytaj, 1, HAL_MAX_DELAY);
 
 	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
 
 
-
 	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
 
-	  HAL_SPI_Transmit(&hspi1, &s1, 1, 200);
-	  HAL_SPI_Transmit(&hspi1, &s2, 1, 200);
+	  HAL_SPI_Transmit(&hspi1, &write_F4, 1, 200);
+	  HAL_SPI_Transmit(&hspi1, &overwrite_F4, 1, 200);
 
 	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
-
-
 
 
 
 	  // ID
 	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
 
-	  //HAL_SPI_TransmitReceive(&hspi1, &ID2, &ID, 1, HAL_MAX_DELAY);
-	  //HAL_SPI_TransmitReceive(&hspi1, &ID2, &ID, 1, HAL_MAX_DELAY);
 	  HAL_SPI_Transmit(&hspi1, &ID2, 1, HAL_MAX_DELAY);
 	  HAL_SPI_Receive(&hspi1, &ID, 1, HAL_MAX_DELAY);
 
@@ -229,35 +329,7 @@ int main(void)
 
 
 
-	  // PRESS 1-3
-	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
-
-	  HAL_SPI_Transmit(&hspi1, &BMP280_REG_PRESS_MSB, 1, 100);
-	  HAL_SPI_Receive(&hspi1, &press1, 1, 100);
-
-	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
-
-
-
-	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
-
-	  HAL_SPI_Transmit(&hspi1, &BMP280_REG_PRESS_LSB, 1, 100);
-	  HAL_SPI_Receive(&hspi1, &press2, 1, 100);
-
-	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
-
-
-	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
-
-	  HAL_SPI_Transmit(&hspi1, &BMP280_REG_PRESS_XLSB, 1, 100);
-	  HAL_SPI_Receive(&hspi1, &press3, 1, 100);
-
-	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
-
-
-
-
-	  // Drugie
+	  // Ciśnienie
 	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
 
 	  HAL_SPI_Transmit(&hspi1, &BMP280_REG_PRESS_MSB, 1, 100);
@@ -269,7 +341,7 @@ int main(void)
 
 	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, SET);
 
-
+	  // Temperatura
 	  HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, RESET);
 
 	  HAL_SPI_Transmit(&hspi1, &BMP280_REG_TEMP_MSB, 1, 100);
@@ -283,57 +355,82 @@ int main(void)
 
 ////////////////////////////////////////////////////////////////////////////////
 
-
-	  press3 = press3 & 0x07;
-
-	  press = (press1 << 12) | (press2 << 4) | (press3);
-
-
-	  press = press / 4095;
 	  PP = ( P[0] << 12 | P[1] << 4 | (P[2]>>4) );
 	  TT = ( T[0] << 12 | T[1] << 4 | (T[2]>>4) );
 
-	  HAL_Delay(200);
+	  HAL_Delay(400);
 
 
-	  // TEMP
-	  var1 = (((double)TT)/16384.0 - ((double)dig_T1)/1024.0)*((double)dig_T2);
-	  var2 = ((((double)TT)/131072.0 - ((double)dig_T1)/8192.0)*(((double)TT)/131072.0 - ((double)dig_T1)/8192.0))*((double)dig_T3);
+//	   TEMP
+//	  var1 = (((double)PP)/16384.0 - ((double)dig_T1)/1024.0)*((double)dig_T2);
+//	  printf(" Test: %d \r\n", var1);
+//	  var2 = ((((double)PP)/131072.0 - ((double)dig_T1)/8192.0)*(((double)PP)/131072.0 - ((double)dig_T1)/8192.0))*((double)dig_T3);
+//	  t_fine = var1+var2;
+//	  temp = t_fine/5120.0;
+
+	  var1 = (((TT>>3)-((int32_t)dig_T1<<1)) *((int32_t)dig_T2))>>11;
+	  var2 = (((((TT>>4) - ((int32_t)dig_T1))*((TT>>4)-((int32_t)dig_T1))) >> 12)*(int32_t)dig_T3)>>14;
 	  t_fine = var1+var2;
-	  temp = t_fine/5120.0;
+	  temp = (t_fine*5 + 128) >> 8;
+	  temp = temp / 100;
+
 
 	  // PRESS
-	  Var1 = ((double)t_fine/2.0)-64000.0;
-	  Var2=Var1*Var1*((double)dig_P6)/32768.0;
-	  Var2=Var2+Var1*((double)dig_P5)*2.0;
-	  Var2=Var2/4.0 + (((double)dig_P4)*65536.0);
-	  Var1 = (      ( (double)dig_P3   )  *  Var1*Var1/524288.0+((double)dig_P2)*Var1)/524288.0;
-	  Var1 = (1.0+Var1/32768.0)*((double)dig_P1);
-	  cis=1048576.0 - (double)PP;
-	  printf(" Test: %d \r\n", cis);
-	  cis = (cis-(Var2/4096.0))*6250.0/Var1;
-	  Var1=((double)dig_P9)*cis*cis/2147483648.0;
-	  Var2=cis*((double)dig_P8)/32768.0;
-	  cis = cis + (Var1+Var2+((double)dig_P7))/16.0;
-	  Cis = cis/100.0;
+//	  Var1 = ((double)t_fine/2.0)-64000.0;
+//	  Var2=Var1*Var1*((double)dig_P6)/32768.0;
+//	  Var2=Var2+Var1*((double)dig_P5)*2.0;
+//	  Var2=Var2/4.0 + (((double)dig_P4)*65536.0);
+//	  Var1 = (      ( (double)dig_P3   )  *  Var1*Var1/524288.0+((double)dig_P2)*Var1)/524288.0;
+//	  Var1 = (1.0+Var1/32768.0)*((double)dig_P1);
+//	  cis=1048576.0 - (double)PP;
+//	  cis = (cis-(Var2/4096.0))*6250.0/Var1;
+//	  Var1=((double)dig_P9)*cis*cis/2147483648.0;
+//	  Var2=cis*((double)dig_P8)/32768.0;
+//	  cis = cis + (Var1+Var2+((double)dig_P7))/16.0;
+//	  cis = cis/100.0;
 
 
-	  printf("%d \t ID : %d \r\n", i++ , ID );
+	  Var1 = ((int32_t)t_fine>>1) - (int32_t)64000;
+	  Var2 = (((Var1>>2) * (Var1>>2)) >> 11 ) * ((int32_t)dig_P6);
+	  Var2 = Var2 + ((Var1*((int32_t)dig_P5))<<1);
+	  Var2 = (Var2>>2)+(((int32_t)dig_P4)<<16);
+	  Var1 = (((dig_P3 * (((Var1>>2) * (Var1>>2)) >> 13 )) >> 3) + ((((int32_t)dig_P2) * Var1)>>1))>>18;
+	  Var1 =((((32768+Var1))*((int32_t)dig_P1))>>15);
+	  printf(" TEST: %d \r\n", Var1);
+	  if (Var1 == 0){
+		  return 0; // avoid exception caused by division by zero
+	  }
+	  cis = (((uint32_t)(      ((int32_t)1048576)-PP)-(Var2>>12)))*3125;
+	  if (cis < 0x80000000) {
+		  cis = (cis << 1) / ((uint32_t)Var1);
+	  }
+	  else{
+		  cis = (cis / (uint32_t)Var1) * 2;
+	  }
+//	  cis = 1048576.0 - (double)PP;
+//	  cis = (cis - (Var2/4096.0)) * 6250.0 / Var1;
+	  Var1 = (((int32_t)dig_P9) * ((int32_t)(((cis>>3) * (cis>>3))>>13)))>>12;
+	  Var2 = (((int32_t)(cis>>2)) * ((int32_t)dig_P8))>>13;
+	  cis = (uint32_t)((int32_t)cis + ((Var1 + Var2 + dig_P7) >> 4));
+	  cis = cis/100;
+
+
+
+
+
+
+	  printf("%d  ID : %d \r\n", i++ , ID );
 	  if( i==1000 ) i=0;
 
-	  printf(" Press1 : %d \r\n", press1 );
-	  printf(" Press2 : %d \r\n", press2 );
-	  printf(" Press3 : %d \r\n", press3 );
+	  printf(" P: ( %d , %d , %d ) \r\n", P[0] , P[1] , P[2] );
+	  printf(" T: ( %d , %d , %d ) \r\n", T[0] , T[1] , T[2] );
 
-	  printf(" T1: %d \r\n", T[0] );
-	  printf(" T2: %d \r\n", T[1] );
-	  printf(" T3: %d \r\n", T[2] );
+	  printf(" CISNIENIE : %d hPa \r\n", PP );
+	  printf(" TEMPERATURA: %d *C \r\n", TT );
+//	  printf(" Register read: %d \r\n", dig_T1);
 
-//	  printf(" CISNIENIE : %d hPa \r\n", PP );
-//	  printf(" TEMPERATURA: %d hPa \r\n", TT );
 	  printf(" temp: %d *C \r\n", temp );
-	  printf(" cis: %d hPa \r\n", Cis );
-
+	  printf(" cis: %d hPa \r\n", cis );
 
 	  printf(" czytaj mode : %d \r\n", czytaj);
 	  printf("\r\n" );
