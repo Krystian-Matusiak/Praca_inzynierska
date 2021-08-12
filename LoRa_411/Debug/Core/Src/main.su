@@ -1,0 +1,16 @@
+main.c:173:5:_write	24	static
+main.c:178:6:SPI_CS_LOW	8	static
+main.c:182:6:SPI_CS_HIGH	8	static
+main.c:186:15:Read_Reg	24	static
+main.c:198:6:Write_Reg	24	static
+main.c:208:6:set_OPMODE	16	static
+main.c:212:6:set_LoRa_mode	16	static
+main.c:220:6:set_Freq	24	static
+main.c:230:6:set_config	16	static
+main.c:257:9:Receive	40	static
+main.c:281:6:Write_Buf	280	static
+main.c:295:6:Transmit	16	static
+main.c:310:6:set_Power	16	static
+main.c:327:5:main	8	static
+main.c:396:6:SystemClock_Config	88	static
+main.c:439:6:Error_Handler	4	static,ignoring_inline_asm
