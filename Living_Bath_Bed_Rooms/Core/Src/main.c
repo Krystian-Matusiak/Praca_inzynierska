@@ -20,10 +20,6 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
-#include "adc.h"
-#include "spi.h"
-#include "usart.h"
-#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -33,6 +29,7 @@
 #include <semphr.h>
 #include "FreeRTOS.h"
 #include "task.h"
+#include "LoRa.h"
 
 /* USER CODE END Includes */
 
@@ -58,19 +55,22 @@
 
 /* USER CODE BEGIN PV */
 
+// -------------------------------------
+// Task handlers
+
 xTaskHandle light_liv_handle;
 xTaskHandle light_bed_handle;
 xTaskHandle light_bath_handle;
 xTaskHandle light_fl_handle;
 xTaskHandle light_alarm_handle;
 xTaskHandle radio_module_handle;
+xTaskHandle fan_handle;
+xTaskHandle tx_handle;
+xTaskHandle rx_handle;
 
-uint8_t temperature_measure=0;
-uint8_t temperature=0;
 
-uint8_t humidity_measure=0;
-uint8_t humidity=0;
-
+// -------------------------------------
+// Boolean variables
 
 uint8_t isLivingroomEmpty=0;
 uint8_t isBathroomEmpty=0;
@@ -79,11 +79,40 @@ uint8_t isFlood=0;
 uint8_t isAlarmOn=0;
 uint8_t isAlarmOff=0;
 
-uint8_t time=0;
+
+// -------------------------------------
+// Variables related with temperature and humidity
+
+uint8_t temperature_measure=0;
+uint8_t temperature=0;
+
+uint8_t humidity_measure=0;
+uint8_t humidity=0;
+
+// -------------------------------------
+// Variables related with data and time
+
 uint8_t hours=0;
 uint8_t minutes=0;
 uint8_t seconds=0;
 
+uint8_t day=0;
+uint8_t month=0;
+uint8_t year=0;
+uint8_t day_week=0;
+
+
+// -------------------------------------
+// Transmit and receive buffor
+
+char tx_data[256];
+char rx_data[256];
+
+
+// Continuous updatable time buffor
+uint8_t buffor[8] = {0,1,2,3,4,5,6,7};
+// Current time send
+uint8_t real_time[8] = { 1 , 21 , 7 , 3 , 13 , 20 , 0 ,2};
 
 
 static SemaphoreHandle_t mutex;
@@ -104,19 +133,14 @@ void flood_protection 	(void *pvParameters);
 void alarm_clock		(void *pvParameters);
 void radio_module		(void *pvParameters);
 
-void TX_radio();
-void RX_radio();
+void TX_radio		(void *pvParameters);
+void RX_radio		(void *pvParameters);
 
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
-int _write(int file , char *ptr , int len){
-  HAL_UART_Transmit(&huart1 , ptr , len , 50);
-  return len;
-}
 
 
 
@@ -176,7 +200,7 @@ void ceiling_fan 	 	(void *pvParameters){
 	}
 	vTaskDelete(NULL);
 }
-int b=0;
+
 void flood_protection 	(void *pvParameters){
 	while(1){
 
@@ -185,12 +209,8 @@ void flood_protection 	(void *pvParameters){
 
 		  HAL_ADC_Start(&hadc2);
 
-		  //printf(" Humidity : %d , measure : %d \r\n", humidity , humidity_measure);
 		  printf(" Stan : %d \r\n", isBathroomEmpty );
 
-		  //printf(" Stack : %d \r\n", uxTaskGetStackHighWaterMark(light_fl_handle) );
-		  //vTaskResume(light_bath_handle);
-		  //vTaskResume(light_bed_handle);
 			vTaskDelay( 5 / portTICK_PERIOD_MS);
 
 		  if( humidity >= 70)
@@ -213,49 +233,24 @@ void alarm_clock		(void *pvParameters){
 	vTaskDelete(NULL);
 }
 
-void radio_module		(void *pvParameters) {
-
-
-	HAL_GPIO_WritePin(TxEN_GPIO_Port, TxEN_Pin, GPIO_PIN_SET);
-	TX_radio();
-
-	HAL_GPIO_WritePin(TxEN_GPIO_Port, TxEN_Pin, GPIO_PIN_RESET);
-	RX_radio();
-
+void TX_radio(void *pvParameters){
+	while(1){
+		set_OPMODE(OPMODE_TX);
+		Transmit(tx_data, strlen((char*)tx_data));
+		vTaskDelay( 100 / portTICK_PERIOD_MS);
+	}
+	vTaskDelete(NULL);
 }
 
-void TX_radio(){
-	HAL_GPIO_WritePin(TxEN_GPIO_Port, TxEN_Pin, GPIO_PIN_SET);
-
-	HAL_GPIO_WritePin(CS_NRF_GPIO_Port, CS_NRF_Pin, GPIO_PIN_RESET);
-
-	HAL_SPI_Transmit( &hspi1, &isLivingroomEmpty	, 1 , 1000);
-	HAL_SPI_Transmit( &hspi1, &isBathroomEmpty		, 1 , 1000);
-	HAL_SPI_Transmit( &hspi1, &isBedroomEmpty		, 1 , 1000);
-	HAL_SPI_Transmit( &hspi1, &isFlood				, 1 , 1000);
-	HAL_SPI_Transmit( &hspi1, &isAlarmOn			, 1 , 1000);
-	HAL_SPI_Transmit( &hspi1, &isAlarmOff			, 1 , 1000);
-	HAL_SPI_Transmit( &hspi1, &humidity				, 1 , 1000);
-
-
-	HAL_GPIO_WritePin(CS_NRF_GPIO_Port, CS_NRF_Pin, GPIO_PIN_SET);
-
+void RX_radio(void *pvParameters){
+	while(1){
+		set_OPMODE(OPMODE_RX);
+		Receive(rx_data);
+		vTaskDelay( 500 / portTICK_PERIOD_MS);
+	}
+	vTaskDelete(NULL);
 }
 
-void RX_radio(){
-	HAL_GPIO_WritePin(TxEN_GPIO_Port, TxEN_Pin, GPIO_PIN_RESET);
-
-
-	HAL_GPIO_WritePin(CS_NRF_GPIO_Port, CS_NRF_Pin, GPIO_PIN_RESET);
-
-	HAL_SPI_Receive( &hspi1, &temperature_measure , 1 , 1000);
-	HAL_SPI_Receive( &hspi1, &hours , 1 , 1000);
-	HAL_SPI_Receive( &hspi1, &minutes , 1 , 1000);
-	HAL_SPI_Receive( &hspi1, &seconds , 1 , 1000);
-
-	HAL_GPIO_WritePin(CS_NRF_GPIO_Port, CS_NRF_Pin, GPIO_PIN_SET);
-
-}
 
 /* USER CODE END 0 */
 
@@ -299,7 +294,7 @@ int main(void)
   xTaskCreate( light_bathroom	, "LIGHT_BATHROOM_TASK"		, 100, NULL, 1, light_bath_handle );
   xTaskCreate( light_bedroom	, "LIGHT_BEDROOM_TASK"		, 100, NULL, 1, light_bed_handle );
 
-  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 100, NULL, 1, NULL );
+  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 100, NULL, 1, fan_handle );
   xTaskCreate( flood_protection , "FLOOD_PROTECTION_TASK"	, 200, NULL, 2, light_fl_handle );
   xTaskCreate( alarm_clock		, "ALARM_CLOCK_TASK"		, 100, NULL, 1, light_alarm_handle );
 
@@ -319,7 +314,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-
+  LoRa_init(868);
 
 
   while (1)

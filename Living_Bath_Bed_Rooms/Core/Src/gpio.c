@@ -44,8 +44,8 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, BUZZER_Pin|FAN_Pin|CS_NRF_Pin|FLOOD_ALARM_Pin
-                          |TxEN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, BUZZER_Pin|FAN_Pin|CS_Pin|FLOOD_ALARM_Pin
+                          |RST_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOB, LIGHT_BED_Pin|LIGHT_LIVING_Pin|LIGHT_BATH_Pin, GPIO_PIN_RESET);
@@ -58,8 +58,8 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pins : PAPin PAPin PAPin PAPin
                            PAPin */
-  GPIO_InitStruct.Pin = BUZZER_Pin|FAN_Pin|CS_NRF_Pin|FLOOD_ALARM_Pin
-                          |TxEN_Pin;
+  GPIO_InitStruct.Pin = BUZZER_Pin|FAN_Pin|CS_Pin|FLOOD_ALARM_Pin
+                          |RST_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -72,14 +72,14 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PBPin PBPin PBPin */
-  GPIO_InitStruct.Pin = MOTION_BED_Pin|Carrier_Detect_Pin|Address_Match_Pin;
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = MOTION_BED_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  HAL_GPIO_Init(MOTION_BED_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin */
-  GPIO_InitStruct.Pin = Data_Ready_Pin|BUZZER_OFF_Pin;
+  GPIO_InitStruct.Pin = DIO0_Pin|BUZZER_OFF_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);

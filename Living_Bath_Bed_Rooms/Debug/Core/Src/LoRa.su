@@ -1,0 +1,14 @@
+LoRa.c:10:5:_write	24	static
+LoRa.c:15:6:SPI_CS_LOW	8	static
+LoRa.c:19:6:SPI_CS_HIGH	8	static
+LoRa.c:23:15:Read_Reg	24	static
+LoRa.c:35:6:Write_Reg	24	static
+LoRa.c:45:6:set_OPMODE	16	static
+LoRa.c:49:6:set_LoRa_mode	16	static
+LoRa.c:57:6:set_Freq	24	static
+LoRa.c:67:6:set_config	16	static
+LoRa.c:94:6:LoRa_init	16	static
+LoRa.c:112:9:Receive	40	static
+LoRa.c:135:6:Write_Buf	280	static
+LoRa.c:149:6:Transmit	16	static
+LoRa.c:164:6:set_Power	16	static
