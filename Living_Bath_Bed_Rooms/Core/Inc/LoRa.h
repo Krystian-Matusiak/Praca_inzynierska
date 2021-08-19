@@ -102,8 +102,8 @@
 
 // Variables
 
-char rx_data[256];
-char tx_data[256];
+//char rx_data[256];
+//char tx_data[256];
 
 unsigned char hello[32];// = "HELLO! ";
 

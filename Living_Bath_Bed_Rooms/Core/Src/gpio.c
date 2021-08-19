@@ -44,45 +44,39 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, BUZZER_Pin|FAN_Pin|CS_Pin|FLOOD_ALARM_Pin
-                          |RST_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, BUZZER_Pin|FAN_Pin|FLOOD_ALARM_Pin|RST_Pin
+                          |CS_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, LIGHT_BED_Pin|LIGHT_LIVING_Pin|LIGHT_BATH_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOB, LIGHT_LIVING_Pin|LIGHT_BED_Pin|LIGHT_BATH_Pin, GPIO_PIN_RESET);
 
-  /*Configure GPIO pins : PFPin PFPin */
-  GPIO_InitStruct.Pin = MOTION_BATH_Pin|MOTION_LIVING_Pin;
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = DIO0_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOF, &GPIO_InitStruct);
+  HAL_GPIO_Init(DIO0_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin PAPin PAPin
                            PAPin */
-  GPIO_InitStruct.Pin = BUZZER_Pin|FAN_Pin|CS_Pin|FLOOD_ALARM_Pin
-                          |RST_Pin;
+  GPIO_InitStruct.Pin = BUZZER_Pin|FAN_Pin|FLOOD_ALARM_Pin|RST_Pin
+                          |CS_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+  /*Configure GPIO pins : PAPin PAPin PAPin PAPin */
+  GPIO_InitStruct.Pin = MOTION_LIVING_Pin|MOTION_BATH_Pin|MOTION_BED_Pin|BUZZER_OFF_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
   /*Configure GPIO pins : PBPin PBPin PBPin */
-  GPIO_InitStruct.Pin = LIGHT_BED_Pin|LIGHT_LIVING_Pin|LIGHT_BATH_Pin;
+  GPIO_InitStruct.Pin = LIGHT_LIVING_Pin|LIGHT_BED_Pin|LIGHT_BATH_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = MOTION_BED_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(MOTION_BED_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PAPin PAPin */
-  GPIO_InitStruct.Pin = DIO0_Pin|BUZZER_OFF_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
 }
 

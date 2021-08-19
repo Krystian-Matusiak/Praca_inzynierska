@@ -20,12 +20,17 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "cmsis_os.h"
+#include "adc.h"
+#include "spi.h"
+#include "usart.h"
+#include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 
 
 #include <stdio.h>
+#include <string.h>
 #include <semphr.h>
 #include "FreeRTOS.h"
 #include "task.h"
@@ -83,16 +88,16 @@ uint8_t isAlarmOff=0;
 // -------------------------------------
 // Variables related with temperature and humidity
 
-uint8_t temperature_measure=0;
-uint8_t temperature=0;
+uint8_t temperature=30;
 
 uint8_t humidity_measure=0;
 uint8_t humidity=0;
+char humidity_char[5];
 
 // -------------------------------------
 // Variables related with data and time
 
-uint8_t hours=0;
+uint8_t hours=10;
 uint8_t minutes=0;
 uint8_t seconds=0;
 
@@ -105,7 +110,27 @@ uint8_t day_week=0;
 // -------------------------------------
 // Transmit and receive buffor
 
-char tx_data[256];
+
+uint16_t frame = 0b01000000;
+
+void inttochar(uint16_t i , char * c, uint8_t hum){
+	sprintf(humidity_char,"%d",hum);
+
+	for(int cnt=0 ; cnt<8 ; cnt++){
+		if( ((i>>cnt)&(0x01)) == 1 )
+			c[7-cnt] = '1';
+		else
+			c[7-cnt] = '0';
+	}
+	c[9] = humidity_char[0];
+	c[10] = humidity_char[1];
+	c[11] = humidity_char[2];
+
+}
+
+char tx_test[256] = "TEST FreeRTOS! 222                       sa33333333333333  ";
+
+char tx_data[256] = "11111111                                  ";
 char rx_data[256];
 
 
@@ -149,11 +174,15 @@ void light_livingroom   (void *pvParameters){
 
 		isLivingroomEmpty = HAL_GPIO_ReadPin(MOTION_LIVING_GPIO_Port, MOTION_LIVING_Pin);
 
-		if( !isLivingroomEmpty )
+		if( !isLivingroomEmpty ){
 			HAL_GPIO_WritePin(LIGHT_LIVING_GPIO_Port, LIGHT_LIVING_Pin, GPIO_PIN_SET);
-		else
+			frame = frame | (1<<5);
+		}
+		else{
 			HAL_GPIO_WritePin(LIGHT_LIVING_GPIO_Port, LIGHT_LIVING_Pin, GPIO_PIN_RESET);
-
+			frame = frame & ~(1<<5);
+		}
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -163,11 +192,15 @@ void light_bathroom   	(void *pvParameters){
 
 		isBathroomEmpty = HAL_GPIO_ReadPin(MOTION_BATH_GPIO_Port, MOTION_BATH_Pin);
 
-		if( !isBathroomEmpty )
+		if( !isBathroomEmpty ){
 			HAL_GPIO_WritePin(LIGHT_BATH_GPIO_Port, LIGHT_BATH_Pin, GPIO_PIN_SET);
-		else
+			frame = frame | (1<<4);
+		}
+		else{
 			HAL_GPIO_WritePin(LIGHT_BATH_GPIO_Port, LIGHT_BATH_Pin, GPIO_PIN_RESET);
-
+			frame = frame & ~(1<<4);
+		}
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -177,11 +210,15 @@ void light_bedroom   	(void *pvParameters){
 
 		isBedroomEmpty = HAL_GPIO_ReadPin(MOTION_BED_GPIO_Port, MOTION_BED_Pin);
 
-		if( !isBedroomEmpty )
+		if( !isBedroomEmpty ){
 			HAL_GPIO_WritePin(LIGHT_BED_GPIO_Port, LIGHT_BED_Pin, GPIO_PIN_SET);
-		else
+			frame = frame | (1<<3);
+		}
+		else{
 			HAL_GPIO_WritePin(LIGHT_BED_GPIO_Port, LIGHT_BED_Pin, GPIO_PIN_RESET);
-
+			frame = frame & ~(1<<3);
+		}
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -191,12 +228,18 @@ void light_bedroom   	(void *pvParameters){
 void ceiling_fan 	 	(void *pvParameters){
 	while(1){
 
-		temperature = ( temperature_measure * 50) / 255;
+		//temperature = ( temperature_measure * 50) / 255;
 
-		if( temperature > TEMP_THRESHOLD )
+		if( temperature > TEMP_THRESHOLD ){
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
-		else
+			frame = frame | 1;
+		}
+		else{
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
+			frame = frame & ~1;
+		}
+
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -204,16 +247,18 @@ void ceiling_fan 	 	(void *pvParameters){
 void flood_protection 	(void *pvParameters){
 	while(1){
 
-		  humidity_measure = HAL_ADC_GetValue(&hadc2);
-		  humidity = (humidity_measure * 70)/127  + 20;
-
 		  HAL_ADC_Start(&hadc2);
+		  vTaskDelay( 20 / portTICK_PERIOD_MS);
 
-		  printf(" Stan : %d \r\n", isBathroomEmpty );
+		  //humidity_measure = HAL_ADC_GetValue(&hadc2);
+		  humidity = (HAL_ADC_GetValue(&hadc2) * 70)/113 + 20;
 
-			vTaskDelay( 5 / portTICK_PERIOD_MS);
+		  if(humidity > 90)
+			  humidity = 90;
 
-		  if( humidity >= 70)
+		  vTaskDelay( 20 / portTICK_PERIOD_MS);
+
+		  if( humidity >= 50)
 			HAL_GPIO_WritePin(FLOOD_ALARM_GPIO_Port, FLOOD_ALARM_Pin, GPIO_PIN_SET);
 		  else
 			HAL_GPIO_WritePin(FLOOD_ALARM_GPIO_Port, FLOOD_ALARM_Pin, GPIO_PIN_RESET);
@@ -224,20 +269,27 @@ void flood_protection 	(void *pvParameters){
 
 void alarm_clock		(void *pvParameters){
 	while(1){
-		if( hours == 10 )
+		if( hours == 10 && HAL_GPIO_ReadPin(BUZZER_OFF_GPIO_Port, BUZZER_OFF_Pin) != GPIO_PIN_RESET)
 			HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
 
-		if( HAL_GPIO_ReadPin(BUZZER_OFF_GPIO_Port, BUZZER_OFF_Pin) == GPIO_PIN_RESET )
+		if( HAL_GPIO_ReadPin(BUZZER_OFF_GPIO_Port, BUZZER_OFF_Pin) == GPIO_PIN_RESET ){
 			HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
+			frame = frame | (1<<1);
+		}
+		else
+			frame = frame & ~(1<<1);
+
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
 
 void TX_radio(void *pvParameters){
 	while(1){
-		set_OPMODE(OPMODE_TX);
-		Transmit(tx_data, strlen((char*)tx_data));
-		vTaskDelay( 100 / portTICK_PERIOD_MS);
+
+		inttochar(frame, tx_data,humidity);
+		vTaskDelay( 200 / portTICK_PERIOD_MS);
+		Transmit(tx_data, strlen((char *)tx_data));
 	}
 	vTaskDelete(NULL);
 }
@@ -245,8 +297,9 @@ void TX_radio(void *pvParameters){
 void RX_radio(void *pvParameters){
 	while(1){
 		set_OPMODE(OPMODE_RX);
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
 		Receive(rx_data);
-		vTaskDelay( 500 / portTICK_PERIOD_MS);
+		vTaskDelay( 200 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -288,18 +341,25 @@ int main(void)
   /* USER CODE BEGIN 2 */
 
   HAL_ADC_Start(&hadc2);
+  LoRa_init(868);
+  HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
 
+  xTaskCreate( flood_protection , "FLOOD_PROTECTION_TASK"	, 140, NULL, 1, light_fl_handle );
+  xTaskCreate( TX_radio			, "RADIO_TRANSMIT_TASK"		, 130, NULL, 1, tx_handle );
 
-  xTaskCreate( light_livingroom	, "LIGHT_LIVINGROOM_TASK"	, 100, NULL, 1, light_liv_handle );
-  xTaskCreate( light_bathroom	, "LIGHT_BATHROOM_TASK"		, 100, NULL, 1, light_bath_handle );
-  xTaskCreate( light_bedroom	, "LIGHT_BEDROOM_TASK"		, 100, NULL, 1, light_bed_handle );
-
-  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 100, NULL, 1, fan_handle );
-  xTaskCreate( flood_protection , "FLOOD_PROTECTION_TASK"	, 200, NULL, 2, light_fl_handle );
   xTaskCreate( alarm_clock		, "ALARM_CLOCK_TASK"		, 100, NULL, 1, light_alarm_handle );
+  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 70, NULL, 1, fan_handle );
 
-  mutex = xSemaphoreCreateMutex();
-  xSemaphoreTake(mutex, portMAX_DELAY);
+  xTaskCreate( light_livingroom	, "LIGHT_LIVINGROOM_TASK"	, 50, NULL, 1, light_liv_handle );
+  xTaskCreate( light_bathroom	, "LIGHT_BATHROOM_TASK"		, 50, NULL, 1, light_bath_handle );
+  xTaskCreate( light_bedroom	, "LIGHT_BEDROOM_TASK"		, 50, NULL, 1, light_bed_handle );
+
+//  mutex = xSemaphoreCreateMutex();
+//  xSemaphoreTake(mutex, portMAX_DELAY);
+
+
+
+
   vTaskStartScheduler();
 
   /* USER CODE END 2 */
@@ -314,12 +374,11 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  LoRa_init(868);
 
 
   while (1)
   {
-	vTaskDelay( 10 / portTICK_PERIOD_MS);
+	vTaskDelay( 2 / portTICK_PERIOD_MS);
 
     /* USER CODE END WHILE */
 

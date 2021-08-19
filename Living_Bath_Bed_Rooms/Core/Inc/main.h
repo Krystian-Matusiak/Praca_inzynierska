@@ -58,32 +58,32 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define MOTION_BATH_Pin GPIO_PIN_0
-#define MOTION_BATH_GPIO_Port GPIOF
-#define MOTION_LIVING_Pin GPIO_PIN_1
-#define MOTION_LIVING_GPIO_Port GPIOF
+#define DIO0_Pin GPIO_PIN_1
+#define DIO0_GPIO_Port GPIOF
 #define BUZZER_Pin GPIO_PIN_0
 #define BUZZER_GPIO_Port GPIOA
 #define FAN_Pin GPIO_PIN_1
 #define FAN_GPIO_Port GPIOA
-#define CS_Pin GPIO_PIN_2
-#define CS_GPIO_Port GPIOA
 #define FLOOD_ALARM_Pin GPIO_PIN_3
 #define FLOOD_ALARM_GPIO_Port GPIOA
 #define HUMIDITY_Pin GPIO_PIN_4
 #define HUMIDITY_GPIO_Port GPIOA
-#define LIGHT_BED_Pin GPIO_PIN_0
-#define LIGHT_BED_GPIO_Port GPIOB
-#define MOTION_BED_Pin GPIO_PIN_1
-#define MOTION_BED_GPIO_Port GPIOB
+#define MOTION_LIVING_Pin GPIO_PIN_5
+#define MOTION_LIVING_GPIO_Port GPIOA
+#define MOTION_BATH_Pin GPIO_PIN_6
+#define MOTION_BATH_GPIO_Port GPIOA
+#define MOTION_BED_Pin GPIO_PIN_7
+#define MOTION_BED_GPIO_Port GPIOA
+#define LIGHT_LIVING_Pin GPIO_PIN_0
+#define LIGHT_LIVING_GPIO_Port GPIOB
 #define RST_Pin GPIO_PIN_8
 #define RST_GPIO_Port GPIOA
-#define DIO0_Pin GPIO_PIN_11
-#define DIO0_GPIO_Port GPIOA
+#define CS_Pin GPIO_PIN_11
+#define CS_GPIO_Port GPIOA
 #define BUZZER_OFF_Pin GPIO_PIN_12
 #define BUZZER_OFF_GPIO_Port GPIOA
-#define LIGHT_LIVING_Pin GPIO_PIN_6
-#define LIGHT_LIVING_GPIO_Port GPIOB
+#define LIGHT_BED_Pin GPIO_PIN_6
+#define LIGHT_BED_GPIO_Port GPIOB
 #define LIGHT_BATH_Pin GPIO_PIN_7
 #define LIGHT_BATH_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
