@@ -7,34 +7,34 @@
 
 #include "RTC.h"
 
-static void Mode_Write(void) {
+void Mode_Write(void) {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
-	GPIO_InitStructure.Pin = SDA;
+	GPIO_InitStructure.Pin = SDA_RTC_Pin;
 	GPIO_InitStructure.Mode =  GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 }
 
-static void Mode_Read(void) {
+void Mode_Read(void) {
 	GPIO_InitTypeDef GPIO_InitStructure;
 
-	GPIO_InitStructure.Pin = SDA;
+	GPIO_InitStructure.Pin = SDA_RTC_Pin;
 	GPIO_InitStructure.Mode =  GPIO_MODE_INPUT;
 	GPIO_InitStructure.Pull = GPIO_PULLDOWN;
 	GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
 }
 
-static void Send_Command(uint8_t command) {
+void Send_Command(uint8_t command) {
 	for ( uint8_t i = 0; i < 8; i ++){
 
-		HAL_GPIO_WritePin(GPIOC, SDA, (command & 1) ?  GPIO_PIN_SET :  GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(GPIOC, SCLK,  GPIO_PIN_SET);
+		HAL_GPIO_WritePin(SDA_RTC_GPIO_Port, SDA_RTC_Pin, (command & 1) ?  GPIO_PIN_SET :  GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(SCLK_RTC_GPIO_Port, SCLK_RTC_Pin,  GPIO_PIN_SET);
 
 		HAL_Delay(1);
-		HAL_GPIO_WritePin(GPIOC, SCLK,  GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(SCLK_RTC_GPIO_Port, SCLK_RTC_Pin,  GPIO_PIN_RESET);
 		HAL_Delay(1);
 
 		command >>= 1;
@@ -42,50 +42,50 @@ static void Send_Command(uint8_t command) {
 }
 
 
-static void Write_Byte(uint8_t address, uint8_t value){
+void Write_Byte(uint8_t address, uint8_t value){
 
-	HAL_GPIO_WritePin(GPIOC, RST_RTC,  GPIO_PIN_SET);
+	HAL_GPIO_WritePin(RST_RTC_GPIO_Port, RST_RTC_Pin,  GPIO_PIN_SET);
 	Send_Command(address);
 
 	for ( uint8_t i = 0; i < 8; i ++) {
-		HAL_GPIO_WritePin(GPIOC, SDA, (value & 1) ?  GPIO_PIN_SET :  GPIO_PIN_RESET);
-		HAL_GPIO_WritePin(GPIOC, SCLK,  GPIO_PIN_SET);
+		HAL_GPIO_WritePin(SDA_RTC_GPIO_Port, SDA_RTC_Pin, (value & 1) ?  GPIO_PIN_SET :  GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(SCLK_RTC_GPIO_Port, SCLK_RTC_Pin,  GPIO_PIN_SET);
 
 		HAL_Delay(1);
-		HAL_GPIO_WritePin(GPIOC, SCLK,  GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(SCLK_RTC_GPIO_Port, SCLK_RTC_Pin,  GPIO_PIN_RESET);
 		HAL_Delay(1);
 
 		value >>= 1;
 	}
 
-	HAL_GPIO_WritePin(GPIOC, RST_RTC,  GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOC, SDA,  GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(RST_RTC_GPIO_Port, RST_RTC_Pin,  GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(SDA_RTC_GPIO_Port, SDA_RTC_Pin,  GPIO_PIN_RESET);
 }
 
 
-static uint8_t Read_Byte(uint8_t address)
+uint8_t Read_Byte(uint8_t address)
 {
 	uint8_t Temp = 0;
 
-	HAL_GPIO_WritePin(GPIOC, RST_RTC,  GPIO_PIN_SET);
+	HAL_GPIO_WritePin(RST_RTC_GPIO_Port, RST_RTC_Pin,  GPIO_PIN_SET);
 	address = address | 0x01;
 
 	Send_Command(address);
 	Mode_Read();
 	for ( uint8_t i = 0; i < 8; i ++){
 		Temp >>= 1;
-		if(HAL_GPIO_ReadPin(GPIOC, SDA))
+		if(HAL_GPIO_ReadPin(SDA_RTC_GPIO_Port, SDA_RTC_Pin))
 			Temp |= 0x80;
 
-		HAL_GPIO_WritePin(GPIOC, SCLK,  GPIO_PIN_SET);
+		HAL_GPIO_WritePin(SCLK_RTC_GPIO_Port, SCLK_RTC_Pin,  GPIO_PIN_SET);
 		HAL_Delay(1);
-		HAL_GPIO_WritePin(GPIOC, SCLK,  GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(SCLK_RTC_GPIO_Port, SCLK_RTC_Pin,  GPIO_PIN_RESET);
 		HAL_Delay(1);
 	}
 	Mode_Write();
 
-	HAL_GPIO_WritePin(GPIOC, RST_RTC,  GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOC, SDA,  GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(RST_RTC_GPIO_Port, RST_RTC_Pin,  GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(SDA_RTC_GPIO_Port, SDA_RTC_Pin,  GPIO_PIN_RESET);
 	return Temp;
 }
 
@@ -130,15 +130,15 @@ void Read_Time(uint8_t *buffor){
 void RTC_Init(void){
 	GPIO_InitTypeDef GPIO_InitStructure;
 
-	GPIO_InitStructure.Pin = SCLK | SDA | RST_RTC;
+	GPIO_InitStructure.Pin = SCLK_RTC_Pin | SDA_RTC_Pin | RST_RTC_Pin;
 	GPIO_InitStructure.Mode =  GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStructure.Speed = GPIO_SPEED_HIGH;
 	HAL_GPIO_Init(GPIOC, &GPIO_InitStructure);
 
 	Write_Byte(REG_CHARGER,0x00);
 
-	HAL_GPIO_WritePin(GPIOC, RST_RTC,  GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(GPIOC, SCLK,  GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(RST_RTC_GPIO_Port, RST_RTC_Pin,  GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(SCLK_RTC_GPIO_Port, SCLK_RTC_Pin,  GPIO_PIN_RESET);
 
 	DWT->CTRL |= 1 ;
 }

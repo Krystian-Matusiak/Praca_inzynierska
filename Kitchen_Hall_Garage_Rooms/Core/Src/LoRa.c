@@ -13,11 +13,11 @@ int _write(int file , char *ptr , int len){
 }
 
 void SPI_CS_LOW(){
-	HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(CS_LORA_GPIO_Port, CS_LORA_Pin, GPIO_PIN_RESET);
 }
 
 void SPI_CS_HIGH(){
-	HAL_GPIO_WritePin(CS_GPIO_Port, CS_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(CS_LORA_GPIO_Port, CS_LORA_Pin, GPIO_PIN_SET);
 }
 
 unsigned char Read_Reg(unsigned char addr){

@@ -58,38 +58,22 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define DATA_Ready_Pin GPIO_PIN_2
-#define DATA_Ready_GPIO_Port GPIOE
-#define INT1_Pin GPIO_PIN_4
-#define INT1_GPIO_Port GPIOE
-#define INT2_Pin GPIO_PIN_5
-#define INT2_GPIO_Port GPIOE
-#define PC14_OSC32_IN_Pin GPIO_PIN_14
-#define PC14_OSC32_IN_GPIO_Port GPIOC
-#define PC15_OSC32_OUT_Pin GPIO_PIN_15
-#define PC15_OSC32_OUT_GPIO_Port GPIOC
-#define PH0_OSC_IN_Pin GPIO_PIN_0
-#define PH0_OSC_IN_GPIO_Port GPIOH
-#define PH1_OSC_OUT_Pin GPIO_PIN_1
-#define PH1_OSC_OUT_GPIO_Port GPIOH
 #define SUN_UP_Pin GPIO_PIN_0
 #define SUN_UP_GPIO_Port GPIOC
 #define SUN_DOWN_Pin GPIO_PIN_1
 #define SUN_DOWN_GPIO_Port GPIOC
-#define SUN_LEFT_Pin GPIO_PIN_2
-#define SUN_LEFT_GPIO_Port GPIOC
-#define SUN_RIGHT_Pin GPIO_PIN_3
+#define SUN_RIGHT_Pin GPIO_PIN_2
 #define SUN_RIGHT_GPIO_Port GPIOC
-#define SPI1_SCK_Pin GPIO_PIN_5
-#define SPI1_SCK_GPIO_Port GPIOA
-#define SPI1_MISO_Pin GPIO_PIN_6
-#define SPI1_MISO_GPIO_Port GPIOA
-#define SPI1_MOSI_Pin GPIO_PIN_7
-#define SPI1_MOSI_GPIO_Port GPIOA
-#define CS_Pin GPIO_PIN_0
-#define CS_GPIO_Port GPIOB
+#define SUN_LEFT_Pin GPIO_PIN_3
+#define SUN_LEFT_GPIO_Port GPIOC
+#define CS_BMP_Pin GPIO_PIN_5
+#define CS_BMP_GPIO_Port GPIOC
+#define CS_LORA_Pin GPIO_PIN_0
+#define CS_LORA_GPIO_Port GPIOB
 #define RST_Pin GPIO_PIN_1
 #define RST_GPIO_Port GPIOB
+#define DIO0_Pin GPIO_PIN_2
+#define DIO0_GPIO_Port GPIOB
 #define MOTION_KIT_Pin GPIO_PIN_7
 #define MOTION_KIT_GPIO_Port GPIOE
 #define MOTION_HALL_Pin GPIO_PIN_8
@@ -108,26 +92,18 @@ void Error_Handler(void);
 #define CM_BUZZER_GPIO_Port GPIOE
 #define DOOR_Pin GPIO_PIN_15
 #define DOOR_GPIO_Port GPIOE
-#define CLK_IN_Pin GPIO_PIN_10
-#define CLK_IN_GPIO_Port GPIOB
-#define LD4_Pin GPIO_PIN_12
-#define LD4_GPIO_Port GPIOD
-#define LD3_Pin GPIO_PIN_13
-#define LD3_GPIO_Port GPIOD
-#define LD5_Pin GPIO_PIN_14
-#define LD5_GPIO_Port GPIOD
-#define LD6_Pin GPIO_PIN_15
-#define LD6_GPIO_Port GPIOD
-#define I2S3_MCK_Pin GPIO_PIN_7
-#define I2S3_MCK_GPIO_Port GPIOC
-#define VBUS_FS_Pin GPIO_PIN_9
-#define VBUS_FS_GPIO_Port GPIOA
-#define ST_TOP_Pin GPIO_PIN_8
-#define ST_TOP_GPIO_Port GPIOB
-#define ST_BOTTOM_Pin GPIO_PIN_9
-#define ST_BOTTOM_GPIO_Port GPIOB
-#define MEMS_INT2_Pin GPIO_PIN_1
-#define MEMS_INT2_GPIO_Port GPIOE
+#define CS_PRESS_Pin GPIO_PIN_10
+#define CS_PRESS_GPIO_Port GPIOB
+#define PWM_TOP_Pin GPIO_PIN_13
+#define PWM_TOP_GPIO_Port GPIOB
+#define PWM_BOTTOM_Pin GPIO_PIN_14
+#define PWM_BOTTOM_GPIO_Port GPIOB
+#define SCLK_RTC_Pin GPIO_PIN_6
+#define SCLK_RTC_GPIO_Port GPIOC
+#define SDA_RTC_Pin GPIO_PIN_7
+#define SDA_RTC_GPIO_Port GPIOC
+#define RST_RTC_Pin GPIO_PIN_8
+#define RST_RTC_GPIO_Port GPIOC
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

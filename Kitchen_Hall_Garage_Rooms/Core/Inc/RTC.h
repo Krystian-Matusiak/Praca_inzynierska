@@ -23,19 +23,19 @@
 #define HEX_to_BCD(value)	((value) % 10 + (value) / 10 * 16)
 #define BCD_to_Hex(value)	((value) % 16 + (value) / 16 * 10)
 
-#define SCLK	GPIO_PIN_6
-#define SDA	GPIO_PIN_7
-#define RST_RTC	GPIO_PIN_8
+//#define SCLK	GPIO_PIN_6
+//#define SDA	GPIO_PIN_7
+//#define RST_RTC	GPIO_PIN_8
 
 
 
-static void Mode_Write(void);
-static void Mode_Read(void);
+void Mode_Write(void);
+void Mode_Read(void);
 
-static void Send_Command(uint8_t command);
+void Send_Command(uint8_t command);
 
-static void Write_Byte(uint8_t address, uint8_t value);
-static uint8_t Read_Byte(uint8_t address);
+void Write_Byte(uint8_t address, uint8_t value);
+uint8_t Read_Byte(uint8_t address);
 
 void Write_Time(uint8_t *buffor);
 void Read_Time(uint8_t *buffor);

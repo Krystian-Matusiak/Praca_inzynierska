@@ -49,6 +49,8 @@
 #define TEMP_THRESHOLD 27
 #define HUMID_THRESHOLD 80
 
+#define STM32F303K8_DEVICE 0x03
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -92,7 +94,6 @@ uint8_t temperature=30;
 
 uint8_t humidity_measure=0;
 uint8_t humidity=0;
-char humidity_char[5];
 
 // -------------------------------------
 // Variables related with data and time
@@ -110,29 +111,17 @@ uint8_t day_week=0;
 // -------------------------------------
 // Transmit and receive buffor
 
+// -------------------------------------
+// tx_frame : | device | humidity | livingroom | bathroom | bedroom | alarm switch-off | alarm active |  fan  |
+//				  8bit      8bit	   	1bit		1bit		1bit		  1bit				1bit	 1bit
 
-uint16_t frame = 0b01000000;
+uint8_t tx_frame[3] = { 0x03 , 0x00 , 0b01000000 };
+uint8_t rx_frame[15];
 
-void inttochar(uint16_t i , char * c, uint8_t hum){
-	sprintf(humidity_char,"%d",hum);
+char tx_test[256] = "TEST FreeRTOS 303!      ";
 
-	for(int cnt=0 ; cnt<8 ; cnt++){
-		if( ((i>>cnt)&(0x01)) == 1 )
-			c[7-cnt] = '1';
-		else
-			c[7-cnt] = '0';
-	}
-	c[9] = humidity_char[0];
-	c[10] = humidity_char[1];
-	c[11] = humidity_char[2];
-
-}
-
-char tx_test[256] = "TEST FreeRTOS! 222                       sa33333333333333  ";
-
-char tx_data[256] = "11111111                                  ";
-char rx_data[256];
-
+enum devices {begin, RPi , STM32_F4 , STM32_F3 , end};
+enum devices curr_dev=begin;
 
 // Continuous updatable time buffor
 uint8_t buffor[8] = {0,1,2,3,4,5,6,7};
@@ -176,11 +165,11 @@ void light_livingroom   (void *pvParameters){
 
 		if( !isLivingroomEmpty ){
 			HAL_GPIO_WritePin(LIGHT_LIVING_GPIO_Port, LIGHT_LIVING_Pin, GPIO_PIN_SET);
-			frame = frame | (1<<5);
+			tx_frame[2] = tx_frame[2] | (1<<5);
 		}
 		else{
 			HAL_GPIO_WritePin(LIGHT_LIVING_GPIO_Port, LIGHT_LIVING_Pin, GPIO_PIN_RESET);
-			frame = frame & ~(1<<5);
+			tx_frame[2] = tx_frame[2] & ~(1<<5);
 		}
 		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
@@ -194,11 +183,11 @@ void light_bathroom   	(void *pvParameters){
 
 		if( !isBathroomEmpty ){
 			HAL_GPIO_WritePin(LIGHT_BATH_GPIO_Port, LIGHT_BATH_Pin, GPIO_PIN_SET);
-			frame = frame | (1<<4);
+			tx_frame[2] = tx_frame[2] | (1<<4);
 		}
 		else{
 			HAL_GPIO_WritePin(LIGHT_BATH_GPIO_Port, LIGHT_BATH_Pin, GPIO_PIN_RESET);
-			frame = frame & ~(1<<4);
+			tx_frame[2] = tx_frame[2] & ~(1<<4);
 		}
 		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
@@ -212,11 +201,11 @@ void light_bedroom   	(void *pvParameters){
 
 		if( !isBedroomEmpty ){
 			HAL_GPIO_WritePin(LIGHT_BED_GPIO_Port, LIGHT_BED_Pin, GPIO_PIN_SET);
-			frame = frame | (1<<3);
+			tx_frame[2] = tx_frame[2] | (1<<3);
 		}
 		else{
 			HAL_GPIO_WritePin(LIGHT_BED_GPIO_Port, LIGHT_BED_Pin, GPIO_PIN_RESET);
-			frame = frame & ~(1<<3);
+			tx_frame[2] = tx_frame[2] & ~(1<<3);
 		}
 		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
@@ -232,11 +221,11 @@ void ceiling_fan 	 	(void *pvParameters){
 
 		if( temperature > TEMP_THRESHOLD ){
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
-			frame = frame | 1;
+			tx_frame[2] = tx_frame[2] | 1;
 		}
 		else{
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_RESET);
-			frame = frame & ~1;
+			tx_frame[2] = tx_frame[2] & ~1;
 		}
 
 		vTaskDelay( 20 / portTICK_PERIOD_MS);
@@ -268,37 +257,82 @@ void flood_protection 	(void *pvParameters){
 }
 
 void alarm_clock		(void *pvParameters){
+	uint8_t alarm_off=0;
 	while(1){
-		if( hours == 10 && HAL_GPIO_ReadPin(BUZZER_OFF_GPIO_Port, BUZZER_OFF_Pin) != GPIO_PIN_RESET)
+		if( !alarm_off && hours == 10 && HAL_GPIO_ReadPin(BUZZER_OFF_GPIO_Port, BUZZER_OFF_Pin) != GPIO_PIN_RESET){
 			HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
+			tx_frame[2] = tx_frame[2] | (1<<1);
+		}
 
 		if( HAL_GPIO_ReadPin(BUZZER_OFF_GPIO_Port, BUZZER_OFF_Pin) == GPIO_PIN_RESET ){
 			HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
-			frame = frame | (1<<1);
+			tx_frame[2] = tx_frame[2] | (1<<2);
+			tx_frame[2] = tx_frame[2] & ~(1<<1);
+			alarm_off = 1;
 		}
 		else
-			frame = frame & ~(1<<1);
+			tx_frame[2] = tx_frame[2] & ~(1<<2);
 
 		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
 
+int cnt=0;
 void TX_radio(void *pvParameters){
 	while(1){
-
-		inttochar(frame, tx_data,humidity);
+		tx_frame[1] = humidity;
 		vTaskDelay( 200 / portTICK_PERIOD_MS);
-		Transmit(tx_data, strlen((char *)tx_data));
+		Transmit(tx_frame, sizeof(tx_frame));
+
+		printf("Wyslano \r\n");
+
+		HAL_GPIO_WritePin(LIGHT_BATH_GPIO_Port, LIGHT_BATH_Pin, GPIO_PIN_SET);
+
+		curr_dev++;
+		if(curr_dev == end){
+			curr_dev = begin;
+			curr_dev++;
+		}
+
+		vTaskResume(rx_handle);
+		vTaskSuspend( NULL );
+		vTaskDelay( 5 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
 
 void RX_radio(void *pvParameters){
 	while(1){
+		vTaskSuspend(tx_handle);
+
 		set_OPMODE(OPMODE_RX);
-		vTaskDelay( 10 / portTICK_PERIOD_MS);
-		Receive(rx_data);
+		vTaskDelay( 1 / portTICK_PERIOD_MS);
+
+		if( HAL_GPIO_ReadPin(DIO0_GPIO_Port, DIO0_Pin) == GPIO_PIN_SET ){
+			Receive(rx_frame);
+			if( rx_frame[0] == 0x02 ){
+				printf("dev=%d \t %d:%d:%d \r\n",rx_frame[0] , rx_frame[4], rx_frame[5] , rx_frame[6]);
+			}
+			printf("Carrier found. \r\n");
+		}
+		else{
+			printf("No carrier found. \r\n");
+		}
+
+		printf("Current device -> %d \r\n",curr_dev);
+		printf("My device -> %d \r\n",STM32F411_DEVICE);
+
+		curr_dev++;
+		if(curr_dev == end){
+			curr_dev = begin;
+			curr_dev++;
+		}
+		if( curr_dev == STM32F411_DEVICE ){
+			vTaskResume(tx_handle);
+			vTaskSuspend( NULL );
+			vTaskResume(tx_handle);
+		}
 		vTaskDelay( 200 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
@@ -343,20 +377,18 @@ int main(void)
   HAL_ADC_Start(&hadc2);
   LoRa_init(868);
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
+  tx_frame[0] = STM32F303K8_DEVICE;
 
-  xTaskCreate( flood_protection , "FLOOD_PROTECTION_TASK"	, 140, NULL, 1, light_fl_handle );
-  xTaskCreate( TX_radio			, "RADIO_TRANSMIT_TASK"		, 130, NULL, 1, tx_handle );
+  xTaskCreate( flood_protection , "FLOOD_PROTECTION_TASK"	, 180, NULL, 1, &light_fl_handle );
+  xTaskCreate( TX_radio			, "RADIO_TRANSMIT_TASK"		, 150, NULL, 1, &tx_handle );
+  xTaskCreate( RX_radio			, "RADIO_RECEIVE_TASK"		, 250, NULL, 1, &rx_handle );
 
-  xTaskCreate( alarm_clock		, "ALARM_CLOCK_TASK"		, 100, NULL, 1, light_alarm_handle );
-  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 70, NULL, 1, fan_handle );
+  xTaskCreate( alarm_clock		, "ALARM_CLOCK_TASK"		, 90, NULL, 1, &light_alarm_handle );
+  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 70, NULL, 1, &fan_handle );
 
-  xTaskCreate( light_livingroom	, "LIGHT_LIVINGROOM_TASK"	, 50, NULL, 1, light_liv_handle );
-  xTaskCreate( light_bathroom	, "LIGHT_BATHROOM_TASK"		, 50, NULL, 1, light_bath_handle );
-  xTaskCreate( light_bedroom	, "LIGHT_BEDROOM_TASK"		, 50, NULL, 1, light_bed_handle );
-
-//  mutex = xSemaphoreCreateMutex();
-//  xSemaphoreTake(mutex, portMAX_DELAY);
-
+  xTaskCreate( light_livingroom	, "LIGHT_LIVINGROOM_TASK"	, 70, NULL, 1, &light_liv_handle );
+  xTaskCreate( light_bathroom	, "LIGHT_BATHROOM_TASK"		, 70, NULL, 1, &light_bath_handle );
+  xTaskCreate( light_bedroom	, "LIGHT_BEDROOM_TASK"		, 70, NULL, 1, &light_bed_handle );
 
 
 

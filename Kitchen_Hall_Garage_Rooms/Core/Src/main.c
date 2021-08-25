@@ -21,6 +21,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "adc.h"
+#include "dma.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -31,6 +32,7 @@
 #include "FreeRTOS.h"
 #include "task.h"
 #include "LoRa.h"
+#include "bmp280.h"
 #include "RTC.h"
 
 /* USER CODE END Includes */
@@ -42,6 +44,9 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define STM32F411_DEVICE 0x02
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -60,7 +65,6 @@ xTaskHandle light_kit_handle;
 xTaskHandle light_hall_handle;
 xTaskHandle light_gar_handle;
 xTaskHandle carbon_sensor_handle;
-xTaskHandle temp_humid_handle;
 xTaskHandle clock_handle;
 xTaskHandle door_handle;
 xTaskHandle pressure_handle;
@@ -68,6 +72,42 @@ xTaskHandle tx_handle;
 xTaskHandle rx_handle;
 
 
+// -------------------------------------
+// PID and sun tracker variables
+
+typedef struct Servo{
+	uint8_t Kp;
+	uint8_t Ki;
+	uint8_t Kd;
+
+	int16_t P;
+	int16_t I;
+	int16_t D;
+
+	int16_t error;
+	int16_t prev_error;
+}Servo;
+
+Servo Top;
+Servo Bottom;
+
+void servo_init(){
+	Top.Kp = 1;
+	Top.Ki = 1;
+	Top.Kd = 1;
+	Top.error = 0;
+	Top.prev_error = 0;
+
+
+	Bottom.Kp = 1;
+	Bottom.Ki = 1;
+	Bottom.Kd = 1;
+	Bottom.error = 0;
+	Bottom.prev_error = 0;
+}
+
+int32_t positionTOP = 0;
+int32_t positionBOTTOM = 0;
 
 // -------------------------------------
 // Boolean variables
@@ -81,14 +121,12 @@ uint8_t isDoorClosed=0;
 
 
 // -------------------------------------
-// Variables related with temperature and pressure
+// Variables related with temperature, pressure and ph_resis
 
-uint8_t temperature_measure=0;
-uint8_t temperature=0;
+int32_t temp ;
+uint32_t press;
 
-uint16_t press_measure=0;
-uint16_t press=0;
-
+volatile uint8_t ph_resis[4];
 
 // -------------------------------------
 // Variables related with data and time
@@ -102,14 +140,20 @@ uint8_t month=0;
 uint8_t year=0;
 uint8_t day_week=0;
 
-
-
 // -------------------------------------
 // Transmit and receive buffor
 
-char tx_data[256];
-char rx_data[256];
+// -------------------------------------
+// tx_frame : | device | pressure | temp | clock | kitchen | hall | garage | CMS | door |
+//				  8bit      16bit	8bit   5x8bit   1bit	 1bit	  1bit	 1bit   1bit
 
+uint8_t tx_frame[11] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+uint8_t rx_frame[11] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+
+char tx_test[256] = "TEST FreeRTOS 411!      ";
+
+enum devices {begin, RPi , STM32_F4 , STM32_F3 , dev4 , dev5 , dev6 ,end};
+enum devices curr_dev=begin;
 
 // Continuous updatable time buffor
 uint8_t buffor[8] = {0,1,2,3,4,5,6,7};
@@ -128,7 +172,6 @@ void light_kitchen	(void *pvParameters);
 void light_hall		(void *pvParameters);
 void light_garage	(void *pvParameters);
 void carbon_sensor	(void *pvParameters);
-void temp_humid 	(void *pvParameters);
 void clock			(void *pvParameters);
 void door 			(void *pvParameters);
 void pressure		(void *pvParameters);
@@ -147,12 +190,15 @@ void light_kitchen	(void *pvParameters){
 
 		isKitchenEmpty = HAL_GPIO_ReadPin(MOTION_KIT_GPIO_Port, MOTION_KIT_Pin);
 
-		if( !isKitchenEmpty )
+		if( !isKitchenEmpty ){
 			HAL_GPIO_WritePin(LIGHT_KIT_GPIO_Port, LIGHT_KIT_Pin, GPIO_PIN_SET);
-		else
+			tx_frame[10] = tx_frame[10] | (1<<4);
+		}
+		else{
 			HAL_GPIO_WritePin(LIGHT_KIT_GPIO_Port, LIGHT_KIT_Pin, GPIO_PIN_RESET);
-
-		vTaskDelay( 100 / portTICK_PERIOD_MS);
+			tx_frame[10] = tx_frame[10] & ~(1<<4);
+		}
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
 
 	}
 	vTaskDelete(NULL);
@@ -163,13 +209,15 @@ void light_hall		(void *pvParameters){
 
 		isHallEmpty = HAL_GPIO_ReadPin(MOTION_HALL_GPIO_Port, MOTION_HALL_Pin);
 
-		if( !isHallEmpty )
+		if( !isHallEmpty ){
 			HAL_GPIO_WritePin(LIGHT_HALL_GPIO_Port, LIGHT_HALL_Pin, GPIO_PIN_SET);
-		else
+			tx_frame[10] = tx_frame[10] | (1<<3);
+		}
+		else{
 			HAL_GPIO_WritePin(LIGHT_HALL_GPIO_Port, LIGHT_HALL_Pin, GPIO_PIN_RESET);
-
-		vTaskDelay( 100 / portTICK_PERIOD_MS);
-
+			tx_frame[10] = tx_frame[10] & ~(1<<3);
+		}
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -179,12 +227,15 @@ void light_garage	(void *pvParameters){
 
 		isGarageEmpty = HAL_GPIO_ReadPin(MOTION_GAR_GPIO_Port, MOTION_GAR_Pin);
 
-		if( !isGarageEmpty )
+		if( !isGarageEmpty ){
 			HAL_GPIO_WritePin(LIGHT_GAR_GPIO_Port, LIGHT_GAR_Pin, GPIO_PIN_SET);
-		else
+			tx_frame[10] = tx_frame[10] | (1<<2);
+		}
+		else{
 			HAL_GPIO_WritePin(LIGHT_GAR_GPIO_Port, LIGHT_GAR_Pin, GPIO_PIN_RESET);
-
-		vTaskDelay( 100 / portTICK_PERIOD_MS);
+			tx_frame[10] = tx_frame[10] & ~(1<<2);
+		}
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
 
 	}
 	vTaskDelete(NULL);
@@ -195,37 +246,50 @@ void carbon_sensor	(void *pvParameters){
 
 		isCMSensor = HAL_GPIO_ReadPin(CMS_GPIO_Port, CMS_Pin);
 
-		if( !isGarageEmpty )
+		if( !isGarageEmpty ){
 			HAL_GPIO_WritePin(CM_BUZZER_GPIO_Port, CM_BUZZER_Pin, GPIO_PIN_SET);
-		else
+			tx_frame[10] = tx_frame[10] | (1<<1);
+		}
+		else{
 			HAL_GPIO_WritePin(CM_BUZZER_GPIO_Port, CM_BUZZER_Pin, GPIO_PIN_RESET);
-
+			tx_frame[10] = tx_frame[10] & ~(1<<1);
+		}
 		vTaskDelay( 10 / portTICK_PERIOD_MS);
-	}
-	vTaskDelete(NULL);
-}
-
-void temp_humid 	(void *pvParameters){
-	while(1){
-
-
-
 	}
 	vTaskDelete(NULL);
 }
 
 void clock			(void *pvParameters){
 	while(1){
-		Read_Time(buffor);
+//		Read_Time(buffor);
+//
+//		year = buffor[1];
+//		month = buffor[2];
+//		day = buffor[3];
+//
+//		hours = buffor[4];
+//		minutes = buffor[5];
+//		seconds = buffor[6];
 
-		year = buffor[1];
-		month = buffor[2];
-		day = buffor[3];
+		year = 21;
+		month = 8;
+		day = 24;
 
-		hours = buffor[4];
-		minutes = buffor[5];
-		seconds = buffor[6];
+		hours = 9;
+		minutes = 1;
+		seconds = 41;
 
+		tx_frame[4] = hours;
+		tx_frame[5] = minutes;
+		tx_frame[6] = seconds;
+		tx_frame[7] = day;
+		tx_frame[8] = month;
+		tx_frame[9] = year;
+		seconds ++;
+		if(seconds == 60){
+			seconds=0;
+			minutes++;
+		}
 		vTaskDelay( 500 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
@@ -235,15 +299,21 @@ void door 			(void *pvParameters){
 	while(1){
 		isDoorClosed = HAL_GPIO_ReadPin(DOOR_GPIO_Port, DOOR_Pin);
 		vTaskDelay( 300 / portTICK_PERIOD_MS);
+		if( isDoorClosed )
+			tx_frame[10] = tx_frame[10] | 1;
+		else
+			tx_frame[10] = tx_frame[10] & ~1;
+		vTaskDelay( 50 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
 
 void pressure		(void *pvParameters){
 	while(1){
-
-
-
+		get_temp_press( &temp, &press);
+		tx_frame[1] = press;
+		tx_frame[3] = temp;
+		vTaskDelay( 80 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -251,30 +321,102 @@ void pressure		(void *pvParameters){
 void sun_tracker	(void *pvParameters){
 	while(1){
 
+		//-----------------------------------------------------------------
+		// TOP
 
+		Top.error = 0 - (ph_resis[0] - ph_resis[1]);
 
+		Top.P = Top.Kp * Top.error;
+		Top.I = Top.Ki * (Top.error - Top.prev_error);
+		Top.D = Top.Kd * Top.error;
+
+		Top.prev_error = Top.error;
+
+		positionTOP += Top.P + Top.I;
+
+		__HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_1 , positionTOP );
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
+
+		//-----------------------------------------------------------------
+		//BOTTOM
+
+		Bottom.error = 0 - (ph_resis[2] - ph_resis[3]);
+
+		Bottom.P = Bottom.Kp * Bottom.error;
+		Bottom.I = Bottom.Ki * (Bottom.error - Bottom.prev_error);
+		Bottom.D = Bottom.Kd * Bottom.error;
+
+		Bottom.prev_error = Bottom.error;
+
+		positionBOTTOM += Bottom.P + Bottom.I;
+
+		__HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_1 , positionBOTTOM );
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
 
 
-
+int cnt=0;
 void TX_radio(void *pvParameters){
 	while(1){
+
 		set_OPMODE(OPMODE_TX);
-		Transmit(tx_data, strlen((char*)tx_data));
-		vTaskDelay( 100 / portTICK_PERIOD_MS);
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
+		Transmit(tx_frame, sizeof(tx_frame));
+
+		printf("Wyslano \r\n");
+
+		curr_dev++;
+		if(curr_dev == end){
+			curr_dev = begin;
+			curr_dev++;
+		}
+
+		vTaskResume(rx_handle);
+		vTaskSuspend( NULL );
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
+
 
 void RX_radio(void *pvParameters){
 	while(1){
+		vTaskSuspend(tx_handle);
+
 		set_OPMODE(OPMODE_RX);
-		Receive(rx_data);
-		vTaskDelay( 400 / portTICK_PERIOD_MS);
+		vTaskDelay( 1 / portTICK_PERIOD_MS);
+
+		if( HAL_GPIO_ReadPin(DIO0_GPIO_Port, DIO0_Pin) == GPIO_PIN_SET ){
+			Receive(rx_frame);
+			if( rx_frame[0] == 0x03 ){
+				printf("dev=%d \t humid=%d \t data=%d \r\n",rx_frame[0] , rx_frame[1], rx_frame[2] );
+			}
+			printf("Carrier found. \r\n");
+		}
+		else{
+			printf("No carrier found. \r\n");
+		}
+
+
+		printf("Current device -> %d \r\n",curr_dev);
+		printf("My device -> %d \r\n",STM32F411_DEVICE);
+
+		curr_dev++;
+		if(curr_dev == end){
+			curr_dev = begin;
+			curr_dev++;
+		}
+		if( curr_dev == STM32F411_DEVICE ){
+			vTaskResume(tx_handle);
+			vTaskSuspend( NULL );
+			vTaskResume(tx_handle);
+		}
+
+		vTaskDelay( 200 / portTICK_PERIOD_MS);
 	}
-vTaskDelete(NULL);
+	vTaskDelete(NULL);
 }
 
 
@@ -311,25 +453,39 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_SPI1_Init();
-  MX_USART2_UART_Init();
+  MX_DMA_Init();
   MX_ADC1_Init();
-  MX_TIM4_Init();
+  MX_USART2_UART_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
-  xTaskCreate( light_kitchen	, "LIGHT_KITCHEN_TASK"		, 100, NULL, 1, light_kit_handle );
-  xTaskCreate( light_hall		, "LIGHT_HALL_TASK"			, 100, NULL, 1, light_hall_handle );
-  xTaskCreate( light_garage		, "LIGHT_GARAGE_TASK"		, 100, NULL, 1, light_gar_handle );
+//  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+//  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+//  HAL_ADC_Start_DMA(&hadc1, ph_resis, 4);
 
-  xTaskCreate( carbon_sensor	, "CARBON_SENSOR_TASK" 		, 100, NULL, 1, carbon_sensor_handle );
-  xTaskCreate( temp_humid 		, "FLOOD_PROTECTION_TASK"	, 200, NULL, 2, temp_humid_handle );
-  xTaskCreate( pressure			, "PRESSURE_TASK"			, 100, NULL, 1, pressure_handle );
 
-  xTaskCreate( clock			, "CLOCK"					, 100, NULL, 2, clock_handle );
-  xTaskCreate( door				, "DOOR"					, 100, NULL, 1, door_handle );
+  RTC_Init();
+  LoRa_init(868);
+  servo_init();
+  tx_frame[0] = 0x02;
 
-  xTaskCreate( TX_radio			, "RADIO_TRANSMIT"			, 100, NULL, 2, tx_handle );
-  xTaskCreate( RX_radio			, "RADIO_RECEIVE"			, 100, NULL, 1, rx_handle );
+//  setConstants();
+//  BMP280_setup();
 
+//  xTaskCreate( light_kitchen	, "LIGHT_KITCHEN_TASK"		, 100, NULL, 1, &light_kit_handle );
+//  xTaskCreate( light_hall		, "LIGHT_HALL_TASK"			, 100, NULL, 1, &light_hall_handle );
+//  xTaskCreate( light_garage		, "LIGHT_GARAGE_TASK"		, 100, NULL, 1, &light_gar_handle );
+//
+//  xTaskCreate( carbon_sensor	, "CARBON_SENSOR_TASK" 		, 100, NULL, 1, &carbon_sensor_handle );
+//  xTaskCreate( pressure			, "PRESSURE_TASK"			, 100, NULL, 1, &pressure_handle );
+//
+  xTaskCreate( clock			, "CLOCK_TASK"				, 200, NULL, 1, &clock_handle );
+//  xTaskCreate( door				, "DOOR_TASK"				, 100, NULL, 1, &door_handle );
+//
+  xTaskCreate( TX_radio			, "RADIO_TRANSMIT_TASK"		, 200, NULL, 1, &tx_handle );
+  xTaskCreate( RX_radio			, "RADIO_RECEIVE_TASK"		, 200, NULL, 1, &rx_handle );
+
+  vTaskStartScheduler();
 
   /* USER CODE END 2 */
 
@@ -342,13 +498,12 @@ int main(void)
   /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  RTC_Init();
-  LoRa_init(868);
+
 
   while (1)
   {
+	vTaskDelay( 10 / portTICK_PERIOD_MS);
 
-	//vTaskDelay( 10 / portTICK_PERIOD_MS);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -372,14 +527,10 @@ void SystemClock_Config(void)
   /** Initializes the RCC Oscillators according to the specified parameters
   * in the RCC_OscInitTypeDef structure.
   */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 4;
-  RCC_OscInitStruct.PLL.PLLN = 192;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV4;
-  RCC_OscInitStruct.PLL.PLLQ = 8;
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_NONE;
   if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
   {
     Error_Handler();
@@ -388,12 +539,12 @@ void SystemClock_Config(void)
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
                               |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_HSI;
   RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV4;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
   RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_0) != HAL_OK)
   {
     Error_Handler();
   }
