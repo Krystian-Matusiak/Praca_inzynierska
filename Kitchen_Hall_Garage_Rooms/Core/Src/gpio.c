@@ -53,6 +53,12 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, LIGHT_KIT_Pin|LIGHT_HALL_Pin|LIGHT_GAR_Pin|CM_BUZZER_Pin, GPIO_PIN_RESET);
 
+  /*Configure GPIO pin : PtPin */
+  GPIO_InitStruct.Pin = CAR_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
+  HAL_GPIO_Init(CAR_GPIO_Port, &GPIO_InitStruct);
+
   /*Configure GPIO pins : PCPin PCPin PCPin PCPin */
   GPIO_InitStruct.Pin = CS_BMP_Pin|SCLK_RTC_Pin|SDA_RTC_Pin|RST_RTC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
@@ -78,7 +84,7 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pin = MOTION_KIT_Pin|MOTION_HALL_Pin|MOTION_GAR_Pin|CMS_Pin
                           |DOOR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PEPin PEPin PEPin PEPin */

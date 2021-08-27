@@ -129,7 +129,7 @@ uint8_t buffor[8] = {0,1,2,3,4,5,6,7};
 uint8_t real_time[8] = { 1 , 21 , 7 , 3 , 13 , 20 , 0 ,2};
 
 
-static SemaphoreHandle_t mutex;
+//static SemaphoreHandle_t mutex;
 
 
 
@@ -235,7 +235,6 @@ void ceiling_fan 	 	(void *pvParameters){
 
 void flood_protection 	(void *pvParameters){
 	while(1){
-
 		  HAL_ADC_Start(&hadc2);
 		  vTaskDelay( 20 / portTICK_PERIOD_MS);
 
@@ -282,22 +281,21 @@ int cnt=0;
 void TX_radio(void *pvParameters){
 	while(1){
 		tx_frame[1] = humidity;
-		vTaskDelay( 200 / portTICK_PERIOD_MS);
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
 		Transmit(tx_frame, sizeof(tx_frame));
 
 		printf("Wyslano \r\n");
-
+		rx_frame[0]=0;
 		HAL_GPIO_WritePin(LIGHT_BATH_GPIO_Port, LIGHT_BATH_Pin, GPIO_PIN_SET);
 
-		curr_dev++;
-		if(curr_dev == end){
-			curr_dev = begin;
-			curr_dev++;
-		}
+//		curr_dev++;
+//		if(curr_dev == end){
+//			curr_dev = begin;
+//			curr_dev++;
+//		}
 
 		vTaskResume(rx_handle);
 		vTaskSuspend( NULL );
-		vTaskDelay( 5 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -307,12 +305,19 @@ void RX_radio(void *pvParameters){
 		vTaskSuspend(tx_handle);
 
 		set_OPMODE(OPMODE_RX);
-		vTaskDelay( 1 / portTICK_PERIOD_MS);
+		vTaskDelay( 30 / portTICK_PERIOD_MS);
 
 		if( HAL_GPIO_ReadPin(DIO0_GPIO_Port, DIO0_Pin) == GPIO_PIN_SET ){
 			Receive(rx_frame);
+			rx_frame[0]=0x01;
+			rx_frame[1]=STM32F303K8_DEVICE;
+
 			if( rx_frame[0] == 0x02 ){
 				printf("dev=%d \t %d:%d:%d \r\n",rx_frame[0] , rx_frame[4], rx_frame[5] , rx_frame[6]);
+			}
+			if( rx_frame[0] == 0x01 && rx_frame[1] == STM32F303K8_DEVICE){
+//				vTaskResume(tx_handle);
+//				vTaskSuspend( NULL );
 			}
 			printf("Carrier found. \r\n");
 		}
@@ -320,20 +325,20 @@ void RX_radio(void *pvParameters){
 			printf("No carrier found. \r\n");
 		}
 
-		printf("Current device -> %d \r\n",curr_dev);
-		printf("My device -> %d \r\n",STM32F411_DEVICE);
-
-		curr_dev++;
-		if(curr_dev == end){
-			curr_dev = begin;
-			curr_dev++;
-		}
-		if( curr_dev == STM32F411_DEVICE ){
-			vTaskResume(tx_handle);
-			vTaskSuspend( NULL );
-			vTaskResume(tx_handle);
-		}
-		vTaskDelay( 200 / portTICK_PERIOD_MS);
+//		printf("Current device -> %d \r\n",curr_dev);
+//		printf("My device -> %d \r\n",STM32F303K8_DEVICE);
+//
+//		curr_dev++;
+//		if(curr_dev == end){
+//			curr_dev = begin;
+//			curr_dev++;
+//		}
+//		if( curr_dev == STM32F303K8_DEVICE ){
+//			vTaskResume(tx_handle);
+//			vTaskSuspend( NULL );
+//			vTaskResume(tx_handle);
+//		}
+		rx_frame[0]=0x00;
 	}
 	vTaskDelete(NULL);
 }
@@ -379,16 +384,16 @@ int main(void)
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
   tx_frame[0] = STM32F303K8_DEVICE;
 
-  xTaskCreate( flood_protection , "FLOOD_PROTECTION_TASK"	, 180, NULL, 1, &light_fl_handle );
+//  xTaskCreate( flood_protection , "FLOOD_PROTECTION_TASK"	, 180, NULL, 1, &light_fl_handle );
   xTaskCreate( TX_radio			, "RADIO_TRANSMIT_TASK"		, 150, NULL, 1, &tx_handle );
   xTaskCreate( RX_radio			, "RADIO_RECEIVE_TASK"		, 250, NULL, 1, &rx_handle );
 
-  xTaskCreate( alarm_clock		, "ALARM_CLOCK_TASK"		, 90, NULL, 1, &light_alarm_handle );
-  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 70, NULL, 1, &fan_handle );
+//  xTaskCreate( alarm_clock		, "ALARM_CLOCK_TASK"		, 90, NULL, 1, &light_alarm_handle );
+//  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 70, NULL, 1, &fan_handle );
 
-  xTaskCreate( light_livingroom	, "LIGHT_LIVINGROOM_TASK"	, 70, NULL, 1, &light_liv_handle );
-  xTaskCreate( light_bathroom	, "LIGHT_BATHROOM_TASK"		, 70, NULL, 1, &light_bath_handle );
-  xTaskCreate( light_bedroom	, "LIGHT_BEDROOM_TASK"		, 70, NULL, 1, &light_bed_handle );
+//  xTaskCreate( light_livingroom	, "LIGHT_LIVINGROOM_TASK"	, 70, NULL, 1, &light_liv_handle );
+//  xTaskCreate( light_bathroom	, "LIGHT_BATHROOM_TASK"		, 70, NULL, 1, &light_bath_handle );
+//  xTaskCreate( light_bedroom	, "LIGHT_BEDROOM_TASK"		, 70, NULL, 1, &light_bed_handle );
 
 
 

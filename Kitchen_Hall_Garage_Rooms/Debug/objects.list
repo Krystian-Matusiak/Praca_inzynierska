@@ -1,6 +1,8 @@
 "./Core/Src/LoRa.o"
 "./Core/Src/RTC.o"
 "./Core/Src/adc.o"
+"./Core/Src/bmp280.o"
+"./Core/Src/dma.o"
 "./Core/Src/freertos.o"
 "./Core/Src/gpio.o"
 "./Core/Src/main.o"

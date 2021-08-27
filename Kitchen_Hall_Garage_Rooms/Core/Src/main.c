@@ -67,6 +67,7 @@ xTaskHandle light_gar_handle;
 xTaskHandle carbon_sensor_handle;
 xTaskHandle clock_handle;
 xTaskHandle door_handle;
+xTaskHandle car_handle;
 xTaskHandle pressure_handle;
 xTaskHandle tx_handle;
 xTaskHandle rx_handle;
@@ -133,7 +134,7 @@ volatile uint8_t ph_resis[4];
 
 uint8_t hours=0;
 uint8_t minutes=0;
-uint8_t seconds=0;
+uint8_t seconds=1;
 
 uint8_t day=0;
 uint8_t month=0;
@@ -174,6 +175,7 @@ void light_garage	(void *pvParameters);
 void carbon_sensor	(void *pvParameters);
 void clock			(void *pvParameters);
 void door 			(void *pvParameters);
+void car 			(void *pvParameters);
 void pressure		(void *pvParameters);
 void sun_tracker	(void *pvParameters);
 
@@ -246,7 +248,7 @@ void carbon_sensor	(void *pvParameters){
 
 		isCMSensor = HAL_GPIO_ReadPin(CMS_GPIO_Port, CMS_Pin);
 
-		if( !isGarageEmpty ){
+		if( !isCMSensor ){
 			HAL_GPIO_WritePin(CM_BUZZER_GPIO_Port, CM_BUZZER_Pin, GPIO_PIN_SET);
 			tx_frame[10] = tx_frame[10] | (1<<1);
 		}
@@ -277,7 +279,6 @@ void clock			(void *pvParameters){
 
 		hours = 9;
 		minutes = 1;
-		seconds = 41;
 
 		tx_frame[4] = hours;
 		tx_frame[5] = minutes;
@@ -298,6 +299,20 @@ void clock			(void *pvParameters){
 void door 			(void *pvParameters){
 	while(1){
 		isDoorClosed = HAL_GPIO_ReadPin(DOOR_GPIO_Port, DOOR_Pin);
+		if( !isCar ){
+			tx_frame[10] = tx_frame[10] | (1<<5);
+		}
+		else{
+			tx_frame[10] = tx_frame[10] & ~(1<<5);
+		}
+		vTaskDelay( 50 / portTICK_PERIOD_MS);
+	}
+	vTaskDelete(NULL);
+}
+
+void car 			(void *pvParameters){
+	while(1){
+		isCar = HAL_GPIO_ReadPin(CAR_GPIO_Port, CAR_Pin);
 		vTaskDelay( 300 / portTICK_PERIOD_MS);
 		if( isDoorClosed )
 			tx_frame[10] = tx_frame[10] | 1;
@@ -313,6 +328,7 @@ void pressure		(void *pvParameters){
 		get_temp_press( &temp, &press);
 		tx_frame[1] = press;
 		tx_frame[3] = temp;
+		printf("temp=%d \t cis=%d \r\n" , (int)temp , (int)press);
 		vTaskDelay( 80 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
@@ -389,30 +405,36 @@ void RX_radio(void *pvParameters){
 		vTaskDelay( 1 / portTICK_PERIOD_MS);
 
 		if( HAL_GPIO_ReadPin(DIO0_GPIO_Port, DIO0_Pin) == GPIO_PIN_SET ){
+			printf("Carrier found. \r\n");
 			Receive(rx_frame);
 			if( rx_frame[0] == 0x03 ){
 				printf("dev=%d \t humid=%d \t data=%d \r\n",rx_frame[0] , rx_frame[1], rx_frame[2] );
 			}
-			printf("Carrier found. \r\n");
+			if( rx_frame[0] == 0x01 && rx_frame[1] == STM32F411_DEVICE ){
+				printf("Transmit start \r\n" );
+				vTaskResume(tx_handle);
+				vTaskSuspend( NULL );
+				vTaskResume(tx_handle);
+			}
 		}
 		else{
 			printf("No carrier found. \r\n");
 		}
 
 
-		printf("Current device -> %d \r\n",curr_dev);
-		printf("My device -> %d \r\n",STM32F411_DEVICE);
+//		printf("Current device -> %d \r\n",curr_dev);
+//		printf("My device -> %d \r\n",STM32F411_DEVICE);
 
-		curr_dev++;
-		if(curr_dev == end){
-			curr_dev = begin;
-			curr_dev++;
-		}
-		if( curr_dev == STM32F411_DEVICE ){
-			vTaskResume(tx_handle);
-			vTaskSuspend( NULL );
-			vTaskResume(tx_handle);
-		}
+//		curr_dev++;
+//		if(curr_dev == end){
+//			curr_dev = begin;
+//			curr_dev++;
+//		}
+//		if( curr_dev == STM32F411_DEVICE ){
+//			vTaskResume(tx_handle);
+//			vTaskSuspend( NULL );
+//			vTaskResume(tx_handle);
+//		}
 
 		vTaskDelay( 200 / portTICK_PERIOD_MS);
 	}
@@ -457,31 +479,40 @@ int main(void)
   MX_ADC1_Init();
   MX_USART2_UART_Init();
   MX_TIM1_Init();
+  MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
 
 //  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 //  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 //  HAL_ADC_Start_DMA(&hadc1, ph_resis, 4);
 
+  // Setting up BMP280
+  BMP280_setup();
+  setConstants();
 
+  // Setting up Real Time Clock
   RTC_Init();
-  LoRa_init(868);
+
   servo_init();
+
+  // Setting up LoRa
+  LoRa_init(868);
   tx_frame[0] = 0x02;
 
 //  setConstants();
 //  BMP280_setup();
 
-//  xTaskCreate( light_kitchen	, "LIGHT_KITCHEN_TASK"		, 100, NULL, 1, &light_kit_handle );
-//  xTaskCreate( light_hall		, "LIGHT_HALL_TASK"			, 100, NULL, 1, &light_hall_handle );
-//  xTaskCreate( light_garage		, "LIGHT_GARAGE_TASK"		, 100, NULL, 1, &light_gar_handle );
+  xTaskCreate( light_kitchen	, "LIGHT_KITCHEN_TASK"		, 100, NULL, 1, &light_kit_handle );
+  xTaskCreate( light_hall		, "LIGHT_HALL_TASK"			, 100, NULL, 1, &light_hall_handle );
+  xTaskCreate( light_garage		, "LIGHT_GARAGE_TASK"		, 100, NULL, 1, &light_gar_handle );
 //
-//  xTaskCreate( carbon_sensor	, "CARBON_SENSOR_TASK" 		, 100, NULL, 1, &carbon_sensor_handle );
-//  xTaskCreate( pressure			, "PRESSURE_TASK"			, 100, NULL, 1, &pressure_handle );
+  xTaskCreate( carbon_sensor	, "CARBON_SENSOR_TASK" 		, 120, NULL, 1, &carbon_sensor_handle );
+  xTaskCreate( pressure			, "PRESSURE_TASK"			, 200, NULL, 1, &pressure_handle );
 //
   xTaskCreate( clock			, "CLOCK_TASK"				, 200, NULL, 1, &clock_handle );
-//  xTaskCreate( door				, "DOOR_TASK"				, 100, NULL, 1, &door_handle );
-//
+  xTaskCreate( door				, "DOOR_TASK"				, 120, NULL, 1, &door_handle );
+  xTaskCreate( car				, "CAR_TASK"				, 120, NULL, 1, &car_handle );
+
   xTaskCreate( TX_radio			, "RADIO_TRANSMIT_TASK"		, 200, NULL, 1, &tx_handle );
   xTaskCreate( RX_radio			, "RADIO_RECEIVE_TASK"		, 200, NULL, 1, &rx_handle );
 

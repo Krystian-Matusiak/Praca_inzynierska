@@ -66,6 +66,8 @@ void Error_Handler(void);
 #define SUN_RIGHT_GPIO_Port GPIOC
 #define SUN_LEFT_Pin GPIO_PIN_3
 #define SUN_LEFT_GPIO_Port GPIOC
+#define CAR_Pin GPIO_PIN_4
+#define CAR_GPIO_Port GPIOC
 #define CS_BMP_Pin GPIO_PIN_5
 #define CS_BMP_GPIO_Port GPIOC
 #define CS_LORA_Pin GPIO_PIN_0

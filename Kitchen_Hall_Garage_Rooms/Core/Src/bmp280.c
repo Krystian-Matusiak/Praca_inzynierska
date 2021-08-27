@@ -50,12 +50,12 @@ int16_t  dig_P9;
 
 int read_data( uint8_t *addr, int8_t * value , uint8_t len) {
 
-	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, RESET);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
 
-	HAL_SPI_Transmit(&hspi1, addr, 1, 100);
-	HAL_SPI_Receive(&hspi1, value, len, 100);
+	HAL_SPI_Transmit(&hspi3, addr, 1, 100);
+	HAL_SPI_Receive(&hspi3, value, len, 100);
 
-	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, SET);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
 
 	HAL_Delay(3);
 	return 1;
@@ -63,12 +63,12 @@ int read_data( uint8_t *addr, int8_t * value , uint8_t len) {
 
 int uread_data( uint8_t *addr, uint8_t * value , uint8_t len) {
 
-	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, RESET);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
 
-	HAL_SPI_Transmit(&hspi1, addr, 1, 100);
-	HAL_SPI_Receive(&hspi1, value, len, 100);
+	HAL_SPI_Transmit(&hspi3, addr, 1, 100);
+	HAL_SPI_Receive(&hspi3, value, len, 100);
 
-	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, SET);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
 
 	HAL_Delay(3);
 	return 1;
@@ -105,7 +105,7 @@ void setConstants(){
 
 void BMP280_setup(){
 
-	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, SET);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
 
 	uint8_t ctrl_meas_addr = 0x74;
 	uint8_t osrs_p = OSRS_P; // skipped / x1 / x2 / x4 / x8 / x16
@@ -123,33 +123,33 @@ void BMP280_setup(){
 	uint8_t read_F4=0xF4;
 	uint8_t czytaj=0;
 
-	uint8_t ctrl_meas = mode | osrs_p | osrs_t;
+	uint8_t ctrl_meas = mode | osrs_t | osrs_t;
 	uint8_t tsb_filtr_msk = t_sb | filter | spi3w_en;
 
 	// MODE
-	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, RESET);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
 
-	HAL_SPI_Transmit(&hspi1, &read_F4, 1, 100);
-	HAL_SPI_Receive(&hspi1, &czytaj, 1, 200);
+	HAL_SPI_Transmit(&hspi3, &read_F4, 1, 100);
+	HAL_SPI_Receive(&hspi3, &czytaj, 1, 200);
 
-	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, SET);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
 
-	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, RESET);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
 
-	HAL_SPI_Transmit(&hspi1, &ctrl_meas_addr, 1, 200);
-	HAL_SPI_Transmit(&hspi1, &ctrl_meas, 1, 200);
+	HAL_SPI_Transmit(&hspi3, &ctrl_meas_addr, 1, 200);
+	HAL_SPI_Transmit(&hspi3, &ctrl_meas, 1, 200);
 
-	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, SET);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
 	HAL_Delay(5);
 
 
 	// Filter and time standby
-	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, RESET);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
 
-	HAL_SPI_Transmit(&hspi1, &t_sb_filtr_addr, 1, 200);
-	HAL_SPI_Transmit(&hspi1, &tsb_filtr_msk, 1, 200);
+	HAL_SPI_Transmit(&hspi3, &t_sb_filtr_addr, 1, 200);
+	HAL_SPI_Transmit(&hspi3, &tsb_filtr_msk, 1, 200);
 
-	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, SET);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
 	HAL_Delay(5);
 
 }
@@ -160,6 +160,10 @@ void get_temp_press(int32_t * temp , uint32_t * press){
 
 	  uint8_t T[3];
 	  int32_t TT=0;
+
+	  uint8_t A[6];
+	  int32_t At=0;
+	  int32_t Ap=0;
 
 	  int32_t var1;
 	  int32_t var2;
@@ -172,27 +176,47 @@ void get_temp_press(int32_t * temp , uint32_t * press){
 	  uint8_t reg_temp = BMP280_REG_TEMP_MSB;
 
 	  // Ciśnienie
-	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, RESET);
-	  HAL_SPI_Transmit(&hspi1, &reg_press, 1, 200);
-	  HAL_SPI_Receive(&hspi1, &P[0], 3, 200);
-	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, SET);
-	  HAL_Delay(50);
+	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
+	  HAL_SPI_Transmit(&hspi3, &reg_press, 1, 200);
+	  HAL_SPI_Receive(&hspi3, &P[0], 3, 200);
+	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
+	  HAL_Delay(200);
+
+
+//	  uint8_t reset=0xE0 & 0x7F;
+//	  uint8_t zero=0xB6;
+//	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
+//	  HAL_SPI_Transmit(&hspi3, &reset, 1, 200);
+//	  HAL_SPI_Receive(&hspi3, &zero, 3, 200);
+//	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
+//	  HAL_Delay(100);
+
+	  // All
+	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
+	  HAL_SPI_Transmit(&hspi3, &reg_press, 1, 200);
+	  HAL_SPI_Receive(&hspi3, &A[0], 6, 200);
+	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
+	  HAL_Delay(200);
+
 
 	  // Temperatura
-	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, RESET);
-	  HAL_SPI_Transmit(&hspi1, &reg_temp, 1, 200);
-	  HAL_SPI_Receive(&hspi1, &T[0], 3, 200);
-	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, SET);
+	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
+	  HAL_SPI_Transmit(&hspi3, &reg_temp, 1, 200);
+	  HAL_SPI_Receive(&hspi3, &T[0], 3, 200);
+	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
 
 
 	  PP = ((uint32_t)( (uint16_t) ((uint16_t)P[0] << 8) | (uint16_t)P[1]) << 4) | ((uint16_t)P[2] >>4    ) ;
 	  TT = ((uint32_t)( (uint16_t) ((uint16_t)T[0] << 8) | (uint16_t)T[1]) << 4) | (uint16_t)(T[2] >>4    ) ;
+	  At = ((uint32_t)( (uint16_t) ((uint16_t)A[3] << 8) | (uint16_t)A[4]) << 4) | (uint16_t)(A[5] >>4    ) ;
+	  Ap = ((uint32_t)( (uint16_t) ((uint16_t)A[0] << 8) | (uint16_t)A[1]) << 4) | (uint16_t)(A[2] >>4    ) ;
+
 	  HAL_Delay(300);
 
 
-	  dig_T1 = 28704;
-	  dig_T2 = 26435;
-	  dig_T3 = -1000;
+//	  dig_T1 = 28704;
+//	  dig_T2 = 26435;
+//	  dig_T3 = -1000;
 //   TEMP
 
 	  var1 = ((((TT>>3)-((int32_t)dig_T1<<1))) *((int32_t)dig_T2))>>11;
@@ -209,9 +233,9 @@ void get_temp_press(int32_t * temp , uint32_t * press){
 	  Var2 = (Var2>>2)+(((int32_t)dig_P4)<<16);
 	  Var1 = (((dig_P3 * (((Var1>>2) * (Var1>>2)) >> 13 )) >> 3) + ((((int32_t)dig_P2) * Var1)>>1))>>18;
 	  Var1 = ((((32768+Var1))*((int32_t)dig_P1))>>15);
-	  if (Var1 == 0){
-		  return ; // avoid exception caused by division by zero
-	  }
+//	  if (Var1 == 0){
+//		  return ; // avoid exception caused by division by zero
+//	  }
 	  *press = (((uint32_t)(  ((int32_t)1048576)-PP )-(Var2>>12)))*3125;
 	  if (*press < 0x80000000) {
 		  *press = (*press << 1) / ((uint32_t)Var1);
@@ -224,10 +248,12 @@ void get_temp_press(int32_t * temp , uint32_t * press){
 	  *press = (uint32_t)((int32_t)*press + ((Var1 + Var2 + dig_P7) >> 4));
 	  *press = *press/100;
 
-	  printf(" P: ( %d , %d , %d ) \r\n", P[0] , P[1] , P[2] );
-	  printf(" T: ( %d , %d , %d ) \r\n", T[0] , T[1] , T[2] );
-	  printf(" CISNIENIE : %d hPa \r\n", (int)PP );
-	  printf(" TEMPERATURA: %d *C \r\n", (int)TT );
+//	  printf(" P: ( %d , %d , %d ) \r\n", P[0] , P[1] , P[2] );
+//	  printf(" T: ( %d , %d , %d ) \r\n", T[0] , T[1] , T[2] );
+//	  printf(" AP: ( %d , %d , %d ) \r\n", A[0] , A[1] , A[2] );
+//	  printf(" AT: ( %d , %d , %d ) \r\n", A[3] , A[4] , A[5] );
+//	  printf(" CISNIENIE : %d hPa \r\n", (int)PP );
+//	  printf(" TEMPERATURA: %d *C \r\n", (int)TT );
 }
 
 

@@ -8,6 +8,8 @@ C_SRCS += \
 ../Core/Src/LoRa.c \
 ../Core/Src/RTC.c \
 ../Core/Src/adc.c \
+../Core/Src/bmp280.c \
+../Core/Src/dma.c \
 ../Core/Src/freertos.c \
 ../Core/Src/gpio.c \
 ../Core/Src/main.c \
@@ -24,6 +26,8 @@ OBJS += \
 ./Core/Src/LoRa.o \
 ./Core/Src/RTC.o \
 ./Core/Src/adc.o \
+./Core/Src/bmp280.o \
+./Core/Src/dma.o \
 ./Core/Src/freertos.o \
 ./Core/Src/gpio.o \
 ./Core/Src/main.o \
@@ -40,6 +44,8 @@ C_DEPS += \
 ./Core/Src/LoRa.d \
 ./Core/Src/RTC.d \
 ./Core/Src/adc.d \
+./Core/Src/bmp280.d \
+./Core/Src/dma.d \
 ./Core/Src/freertos.d \
 ./Core/Src/gpio.d \
 ./Core/Src/main.d \
