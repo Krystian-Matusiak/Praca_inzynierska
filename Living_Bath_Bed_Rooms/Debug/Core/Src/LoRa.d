@@ -28,6 +28,8 @@ Core/Src/LoRa.o: ../Core/Src/LoRa.c ../Core/Inc/LoRa.h ../Core/Inc/adc.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_pwr_ex.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_spi.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_spi_ex.h \
+ ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim.h \
+ ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim_ex.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart.h \
  ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart_ex.h \
  ../Core/Inc/spi.h ../Core/Inc/usart.h ../Core/Inc/gpio.h
@@ -95,6 +97,10 @@ Core/Src/LoRa.o: ../Core/Src/LoRa.c ../Core/Inc/LoRa.h ../Core/Inc/adc.h \
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_spi.h:
 
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_spi_ex.h:
+
+../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim.h:
+
+../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_tim_ex.h:
 
 ../Drivers/STM32F3xx_HAL_Driver/Inc/stm32f3xx_hal_uart.h:
 

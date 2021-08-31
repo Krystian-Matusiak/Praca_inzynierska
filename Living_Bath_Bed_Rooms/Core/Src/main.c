@@ -22,6 +22,7 @@
 #include "cmsis_os.h"
 #include "adc.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -116,7 +117,7 @@ uint8_t day_week=0;
 //				  8bit      8bit	   	1bit		1bit		1bit		  1bit				1bit	 1bit
 
 uint8_t tx_frame[3] = { 0x03 , 0x00 , 0b01000000 };
-uint8_t rx_frame[15];
+uint8_t rx_frame[11]= {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 };
 
 char tx_test[256] = "TEST FreeRTOS 303!      ";
 
@@ -171,7 +172,7 @@ void light_livingroom   (void *pvParameters){
 			HAL_GPIO_WritePin(LIGHT_LIVING_GPIO_Port, LIGHT_LIVING_Pin, GPIO_PIN_RESET);
 			tx_frame[2] = tx_frame[2] & ~(1<<5);
 		}
-		vTaskDelay( 20 / portTICK_PERIOD_MS);
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -189,7 +190,7 @@ void light_bathroom   	(void *pvParameters){
 			HAL_GPIO_WritePin(LIGHT_BATH_GPIO_Port, LIGHT_BATH_Pin, GPIO_PIN_RESET);
 			tx_frame[2] = tx_frame[2] & ~(1<<4);
 		}
-		vTaskDelay( 20 / portTICK_PERIOD_MS);
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -207,7 +208,7 @@ void light_bedroom   	(void *pvParameters){
 			HAL_GPIO_WritePin(LIGHT_BED_GPIO_Port, LIGHT_BED_Pin, GPIO_PIN_RESET);
 			tx_frame[2] = tx_frame[2] & ~(1<<3);
 		}
-		vTaskDelay( 20 / portTICK_PERIOD_MS);
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -216,8 +217,6 @@ void light_bedroom   	(void *pvParameters){
 
 void ceiling_fan 	 	(void *pvParameters){
 	while(1){
-
-		//temperature = ( temperature_measure * 50) / 255;
 
 		if( temperature > TEMP_THRESHOLD ){
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
@@ -228,7 +227,7 @@ void ceiling_fan 	 	(void *pvParameters){
 			tx_frame[2] = tx_frame[2] & ~1;
 		}
 
-		vTaskDelay( 20 / portTICK_PERIOD_MS);
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -236,15 +235,13 @@ void ceiling_fan 	 	(void *pvParameters){
 void flood_protection 	(void *pvParameters){
 	while(1){
 		  HAL_ADC_Start(&hadc2);
-		  vTaskDelay( 20 / portTICK_PERIOD_MS);
+		  vTaskDelay( 10 / portTICK_PERIOD_MS);
 
 		  //humidity_measure = HAL_ADC_GetValue(&hadc2);
 		  humidity = (HAL_ADC_GetValue(&hadc2) * 70)/113 + 20;
 
 		  if(humidity > 90)
 			  humidity = 90;
-
-		  vTaskDelay( 20 / portTICK_PERIOD_MS);
 
 		  if( humidity >= 50)
 			HAL_GPIO_WritePin(FLOOD_ALARM_GPIO_Port, FLOOD_ALARM_Pin, GPIO_PIN_SET);
@@ -272,28 +269,22 @@ void alarm_clock		(void *pvParameters){
 		else
 			tx_frame[2] = tx_frame[2] & ~(1<<2);
 
-		vTaskDelay( 20 / portTICK_PERIOD_MS);
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
 
 int cnt=0;
 void TX_radio(void *pvParameters){
+	vTaskDelay(30 / portTICK_PERIOD_MS);
 	while(1){
 		tx_frame[1] = humidity;
-		vTaskDelay( 10 / portTICK_PERIOD_MS);
+		vTaskDelay( 30 / portTICK_PERIOD_MS);
 		Transmit(tx_frame, sizeof(tx_frame));
 
-		printf("Wyslano \r\n");
-		rx_frame[0]=0;
 		HAL_GPIO_WritePin(LIGHT_BATH_GPIO_Port, LIGHT_BATH_Pin, GPIO_PIN_SET);
 
-//		curr_dev++;
-//		if(curr_dev == end){
-//			curr_dev = begin;
-//			curr_dev++;
-//		}
-
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
 		vTaskResume(rx_handle);
 		vTaskSuspend( NULL );
 	}
@@ -301,44 +292,44 @@ void TX_radio(void *pvParameters){
 }
 
 void RX_radio(void *pvParameters){
+	unsigned char help[11];
+	uint32_t time=0;
 	while(1){
 		vTaskSuspend(tx_handle);
 
-		set_OPMODE(OPMODE_RX);
-		vTaskDelay( 30 / portTICK_PERIOD_MS);
-
+		set_OPMODE(OPMODE_RX_SINGLE);
+		time = HAL_GetTick();
+		while( (HAL_GetTick()-time < 110) &&
+				HAL_GPIO_ReadPin(DIO0_GPIO_Port, DIO0_Pin) == GPIO_PIN_RESET ){
+//				printf("czas --------------------> %d \r\n",HAL_GetTick());
+		}
 		if( HAL_GPIO_ReadPin(DIO0_GPIO_Port, DIO0_Pin) == GPIO_PIN_SET ){
 			Receive(rx_frame);
-			rx_frame[0]=0x01;
-			rx_frame[1]=STM32F303K8_DEVICE;
+//			rx_frame[0]=0x01;
+//			rx_frame[1]=STM32F303K8_DEVICE;
 
 			if( rx_frame[0] == 0x02 ){
 				printf("dev=%d \t %d:%d:%d \r\n",rx_frame[0] , rx_frame[4], rx_frame[5] , rx_frame[6]);
 			}
 			if( rx_frame[0] == 0x01 && rx_frame[1] == STM32F303K8_DEVICE){
-//				vTaskResume(tx_handle);
-//				vTaskSuspend( NULL );
+				vTaskResume(tx_handle);
+				vTaskSuspend( NULL );
+
+				Write_Reg(REG_HOP_PERIOD,0x00);
+				Write_Reg(RegDioMapping1, MAP_DIO0_LORA_RXDONE|MAP_DIO1_LORA_NOP|MAP_DIO2_LORA_NOP);
+				Write_Reg(REG_IRQ_FLAGS, 0xFF);
+				Write_Reg(REG_IRQ_FLAGS_MASK, ~IRQ_LORA_RXDONE_MASK);
+				Write_Reg(REG_FIFO_RX_BASE_AD, 0x00);
+				Write_Reg(REG_FIFO_ADDR_PTR, 0x00);
 			}
-			printf("Carrier found. \r\n");
+			printf("RPI data = %d - %d - %d \r\n" , rx_frame[0], rx_frame[1], rx_frame[2]);
 		}
 		else{
 			printf("No carrier found. \r\n");
 		}
-
-//		printf("Current device -> %d \r\n",curr_dev);
-//		printf("My device -> %d \r\n",STM32F303K8_DEVICE);
-//
-//		curr_dev++;
-//		if(curr_dev == end){
-//			curr_dev = begin;
-//			curr_dev++;
-//		}
-//		if( curr_dev == STM32F303K8_DEVICE ){
-//			vTaskResume(tx_handle);
-//			vTaskSuspend( NULL );
-//			vTaskResume(tx_handle);
-//		}
 		rx_frame[0]=0x00;
+		rx_frame[1]=0x00;
+
 	}
 	vTaskDelete(NULL);
 }
@@ -377,6 +368,7 @@ int main(void)
   MX_SPI1_Init();
   MX_ADC2_Init();
   MX_USART1_UART_Init();
+  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_ADC_Start(&hadc2);
@@ -384,16 +376,16 @@ int main(void)
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
   tx_frame[0] = STM32F303K8_DEVICE;
 
-//  xTaskCreate( flood_protection , "FLOOD_PROTECTION_TASK"	, 180, NULL, 1, &light_fl_handle );
+  xTaskCreate( flood_protection , "FLOOD_PROTECTION_TASK"	, 180, NULL, 1, &light_fl_handle );
   xTaskCreate( TX_radio			, "RADIO_TRANSMIT_TASK"		, 150, NULL, 1, &tx_handle );
   xTaskCreate( RX_radio			, "RADIO_RECEIVE_TASK"		, 250, NULL, 1, &rx_handle );
 
-//  xTaskCreate( alarm_clock		, "ALARM_CLOCK_TASK"		, 90, NULL, 1, &light_alarm_handle );
-//  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 70, NULL, 1, &fan_handle );
+  xTaskCreate( alarm_clock		, "ALARM_CLOCK_TASK"		, 90, NULL, 1, &light_alarm_handle );
+  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 70, NULL, 1, &fan_handle );
 
-//  xTaskCreate( light_livingroom	, "LIGHT_LIVINGROOM_TASK"	, 70, NULL, 1, &light_liv_handle );
-//  xTaskCreate( light_bathroom	, "LIGHT_BATHROOM_TASK"		, 70, NULL, 1, &light_bath_handle );
-//  xTaskCreate( light_bedroom	, "LIGHT_BEDROOM_TASK"		, 70, NULL, 1, &light_bed_handle );
+  xTaskCreate( light_livingroom	, "LIGHT_LIVINGROOM_TASK"	, 70, NULL, 1, &light_liv_handle );
+  xTaskCreate( light_bathroom	, "LIGHT_BATHROOM_TASK"		, 70, NULL, 1, &light_bath_handle );
+  xTaskCreate( light_bedroom	, "LIGHT_BEDROOM_TASK"		, 70, NULL, 1, &light_bed_handle );
 
 
 
