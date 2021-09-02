@@ -69,6 +69,7 @@ xTaskHandle clock_handle;
 xTaskHandle door_handle;
 xTaskHandle car_handle;
 xTaskHandle pressure_handle;
+xTaskHandle sun_tracker_handle;
 xTaskHandle tx_handle;
 xTaskHandle rx_handle;
 
@@ -107,8 +108,8 @@ void servo_init(){
 	Bottom.prev_error = 0;
 }
 
-int32_t positionTOP = 0;
-int32_t positionBOTTOM = 0;
+int16_t positionTOP = 0;
+int16_t positionBOTTOM = 0;
 
 // -------------------------------------
 // Boolean variables
@@ -144,22 +145,20 @@ uint8_t day_week=0;
 // -------------------------------------
 // Transmit and receive buffor
 
-// -------------------------------------
-// tx_frame : | device | pressure | temp | clock | kitchen | hall | garage | CMS | door |
-//				  8bit      16bit	8bit   5x8bit   1bit	 1bit	  1bit	 1bit   1bit
+// -----------------------------------------------------------------------
+// tx_frame : | device | pressure | temp | clock | car | kitchen | hall | garage | CMS | door | PWM TOP | PWM BOTTOM |
+//				  8bit      16bit	8bit   5x8bit  1bit   1bit	   1bit	  1bit	   1bit  1bit     8bit		8bit
 
-uint8_t tx_frame[11] = { 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
-uint8_t rx_frame[11] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+uint8_t tx_frame[15]={0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+uint8_t rx_frame[6]={0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 char tx_test[256] = "TEST FreeRTOS 411!      ";
-
-enum devices {begin, RPi , STM32_F4 , STM32_F3 , dev4 , dev5 , dev6 ,end};
-enum devices curr_dev=begin;
 
 // Continuous updatable time buffor
 uint8_t buffor[8] = {0,1,2,3,4,5,6,7};
 // Current time send
-uint8_t real_time[8] = { 1 , 21 , 7 , 3 , 13 , 20 , 0 ,2 };
+
+uint8_t real_time[8] = { 1 , 21 , 7 , 3 , 9 , 57 , 0 ,2 };
 
 
 /* USER CODE END PV */
@@ -200,7 +199,7 @@ void light_kitchen	(void *pvParameters){
 			HAL_GPIO_WritePin(LIGHT_KIT_GPIO_Port, LIGHT_KIT_Pin, GPIO_PIN_RESET);
 			tx_frame[10] = tx_frame[10] & ~(1<<4);
 		}
-		vTaskDelay( 20 / portTICK_PERIOD_MS);
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
 
 	}
 	vTaskDelete(NULL);
@@ -219,7 +218,7 @@ void light_hall		(void *pvParameters){
 			HAL_GPIO_WritePin(LIGHT_HALL_GPIO_Port, LIGHT_HALL_Pin, GPIO_PIN_RESET);
 			tx_frame[10] = tx_frame[10] & ~(1<<3);
 		}
-		vTaskDelay( 20 / portTICK_PERIOD_MS);
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -237,7 +236,7 @@ void light_garage	(void *pvParameters){
 			HAL_GPIO_WritePin(LIGHT_GAR_GPIO_Port, LIGHT_GAR_Pin, GPIO_PIN_RESET);
 			tx_frame[10] = tx_frame[10] & ~(1<<2);
 		}
-		vTaskDelay( 20 / portTICK_PERIOD_MS);
+		vTaskDelay( 10 / portTICK_PERIOD_MS);
 
 	}
 	vTaskDelete(NULL);
@@ -256,29 +255,29 @@ void carbon_sensor	(void *pvParameters){
 			HAL_GPIO_WritePin(CM_BUZZER_GPIO_Port, CM_BUZZER_Pin, GPIO_PIN_RESET);
 			tx_frame[10] = tx_frame[10] & ~(1<<1);
 		}
-		vTaskDelay( 10 / portTICK_PERIOD_MS);
+		vTaskDelay( 5 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
 
 void clock			(void *pvParameters){
 	while(1){
-//		Read_Time(buffor);
-//
-//		year = buffor[1];
-//		month = buffor[2];
-//		day = buffor[3];
-//
-//		hours = buffor[4];
-//		minutes = buffor[5];
-//		seconds = buffor[6];
+		Read_Time(buffor);
 
-		year = 21;
-		month = 8;
-		day = 24;
+		year = buffor[1];
+		month = buffor[2];
+		day = buffor[7];
 
-		hours = 9;
-		minutes = 1;
+		hours = buffor[4];
+		minutes = buffor[5];
+		seconds = buffor[6];
+
+//		year = 21;
+//		month = 8;
+//		day = 24;
+//
+//		hours = 9;
+//		minutes = 1;
 
 		tx_frame[4] = hours;
 		tx_frame[5] = minutes;
@@ -286,12 +285,14 @@ void clock			(void *pvParameters){
 		tx_frame[7] = day;
 		tx_frame[8] = month;
 		tx_frame[9] = year;
-		seconds ++;
-		if(seconds == 60){
-			seconds=0;
-			minutes++;
-		}
-		vTaskDelay( 500 / portTICK_PERIOD_MS);
+//		seconds ++;
+//		if(seconds == 60){
+//			seconds=0;
+//			minutes++;
+//		}
+
+//		printf("%d:%d:%d %d-%d-20%d \r\n",hours,minutes,seconds,day,month,year);
+		vTaskDelay( 100 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -299,13 +300,13 @@ void clock			(void *pvParameters){
 void door 			(void *pvParameters){
 	while(1){
 		isDoorClosed = HAL_GPIO_ReadPin(DOOR_GPIO_Port, DOOR_Pin);
-		if( !isCar ){
+		if( !isDoorClosed ){
 			tx_frame[10] = tx_frame[10] | (1<<5);
 		}
 		else{
 			tx_frame[10] = tx_frame[10] & ~(1<<5);
 		}
-		vTaskDelay( 50 / portTICK_PERIOD_MS);
+		vTaskDelay( 5 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -313,12 +314,11 @@ void door 			(void *pvParameters){
 void car 			(void *pvParameters){
 	while(1){
 		isCar = HAL_GPIO_ReadPin(CAR_GPIO_Port, CAR_Pin);
-		vTaskDelay( 300 / portTICK_PERIOD_MS);
-		if( isDoorClosed )
+		if( !isCar )
 			tx_frame[10] = tx_frame[10] | 1;
 		else
 			tx_frame[10] = tx_frame[10] & ~1;
-		vTaskDelay( 50 / portTICK_PERIOD_MS);
+		vTaskDelay( 5 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -326,10 +326,16 @@ void car 			(void *pvParameters){
 void pressure		(void *pvParameters){
 	while(1){
 		get_temp_press( &temp, &press);
-		tx_frame[1] = press;
-		tx_frame[3] = temp;
-		printf("temp=%d \t cis=%d \r\n" , (int)temp , (int)press);
-		vTaskDelay( 80 / portTICK_PERIOD_MS);
+		tx_frame[1] = (uint8_t)(press>>8);
+		tx_frame[2] = (uint8_t)press;
+		tx_frame[3] = (uint8_t)temp;
+
+//		tx_frame[1] = 0x03;// (press>>8);
+//		tx_frame[2] = 0xEF;// (uint8_t)press;
+//		tx_frame[3] = 22;//temp;
+
+//		printf("temp=%d \t cis=%d \r\n" , (int)temp , (int)press);
+		vTaskDelay( 20 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -352,6 +358,7 @@ void sun_tracker	(void *pvParameters){
 
 		__HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_1 , positionTOP );
 		vTaskDelay( 20 / portTICK_PERIOD_MS);
+		tx_frame[11] = positionTOP;
 
 		//-----------------------------------------------------------------
 		//BOTTOM
@@ -368,75 +375,63 @@ void sun_tracker	(void *pvParameters){
 
 		__HAL_TIM_SET_COMPARE(&htim1 , TIM_CHANNEL_1 , positionBOTTOM );
 		vTaskDelay( 20 / portTICK_PERIOD_MS);
+		tx_frame[13] = positionBOTTOM;
 	}
 	vTaskDelete(NULL);
 }
 
 
-int cnt=0;
 void TX_radio(void *pvParameters){
+	vTaskDelay(30 / portTICK_PERIOD_MS);
+	uint32_t time=0;
 	while(1){
 
-		set_OPMODE(OPMODE_TX);
-		vTaskDelay( 10 / portTICK_PERIOD_MS);
-		Transmit(tx_frame, sizeof(tx_frame));
-
-		printf("Wyslano \r\n");
-
-		curr_dev++;
-		if(curr_dev == end){
-			curr_dev = begin;
-			curr_dev++;
+		time = HAL_GetTick();
+		while( HAL_GetTick() - time < 5 ){
+			Transmit(tx_frame, sizeof(tx_frame));
 		}
+//		Transmit(tx_frame, sizeof(tx_frame));
+//		printf("test \r\n");
 
 		vTaskResume(rx_handle);
 		vTaskSuspend( NULL );
-		vTaskDelay( 10 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
 
 
 void RX_radio(void *pvParameters){
+	uint32_t time=0;
+	set_OPMODE(OPMODE_RX);
 	while(1){
 		vTaskSuspend(tx_handle);
 
 		set_OPMODE(OPMODE_RX);
-		vTaskDelay( 1 / portTICK_PERIOD_MS);
+		while(	HAL_GPIO_ReadPin(DIO0_GPIO_Port, DIO0_Pin) != GPIO_PIN_SET){}
 
 		if( HAL_GPIO_ReadPin(DIO0_GPIO_Port, DIO0_Pin) == GPIO_PIN_SET ){
-			printf("Carrier found. \r\n");
 			Receive(rx_frame);
-			if( rx_frame[0] == 0x03 ){
-				printf("dev=%d \t humid=%d \t data=%d \r\n",rx_frame[0] , rx_frame[1], rx_frame[2] );
-			}
-			if( rx_frame[0] == 0x01 && rx_frame[1] == STM32F411_DEVICE ){
-				printf("Transmit start \r\n" );
+//			printf("Carrier found. \r\n");
+
+			if( rx_frame[0] == 0x01 && rx_frame[1] == STM32F411_DEVICE){
 				vTaskResume(tx_handle);
 				vTaskSuspend( NULL );
-				vTaskResume(tx_handle);
+
+				Write_Reg(REG_HOP_PERIOD,0x00);
+				Write_Reg(RegDioMapping1, MAP_DIO0_LORA_RXDONE|MAP_DIO1_LORA_NOP|MAP_DIO2_LORA_NOP);
+				Write_Reg(REG_IRQ_FLAGS, 0xFF);
+				Write_Reg(REG_IRQ_FLAGS_MASK, ~IRQ_LORA_RXDONE_MASK);
+				Write_Reg(REG_FIFO_RX_BASE_AD, 0x00);
+				Write_Reg(REG_FIFO_ADDR_PTR, 0x00);
 			}
+			printf("RPI data = %d - %d - %d \r\n" , rx_frame[0], rx_frame[1], rx_frame[2]);
 		}
 		else{
 			printf("No carrier found. \r\n");
 		}
+		rx_frame[0]=0x00;
+		rx_frame[1]=0x00;
 
-
-//		printf("Current device -> %d \r\n",curr_dev);
-//		printf("My device -> %d \r\n",STM32F411_DEVICE);
-
-//		curr_dev++;
-//		if(curr_dev == end){
-//			curr_dev = begin;
-//			curr_dev++;
-//		}
-//		if( curr_dev == STM32F411_DEVICE ){
-//			vTaskResume(tx_handle);
-//			vTaskSuspend( NULL );
-//			vTaskResume(tx_handle);
-//		}
-
-		vTaskDelay( 200 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -482,39 +477,43 @@ int main(void)
   MX_SPI3_Init();
   /* USER CODE BEGIN 2 */
 
+  // Sun tracker (PWM and ADC) init
 //  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
 //  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
 //  HAL_ADC_Start_DMA(&hadc1, ph_resis, 4);
 
   // Setting up BMP280
+  reset();
   BMP280_setup();
   setConstants();
 
   // Setting up Real Time Clock
   RTC_Init();
+  Write_Zero_Seconds();
 
+  // Servo struct definition
   servo_init();
 
   // Setting up LoRa
   LoRa_init(868);
-  tx_frame[0] = 0x02;
+  tx_frame[0] = STM32F411_DEVICE;
 
-//  setConstants();
-//  BMP280_setup();
 
-  xTaskCreate( light_kitchen	, "LIGHT_KITCHEN_TASK"		, 100, NULL, 1, &light_kit_handle );
-  xTaskCreate( light_hall		, "LIGHT_HALL_TASK"			, 100, NULL, 1, &light_hall_handle );
-  xTaskCreate( light_garage		, "LIGHT_GARAGE_TASK"		, 100, NULL, 1, &light_gar_handle );
-//
-  xTaskCreate( carbon_sensor	, "CARBON_SENSOR_TASK" 		, 120, NULL, 1, &carbon_sensor_handle );
-  xTaskCreate( pressure			, "PRESSURE_TASK"			, 200, NULL, 1, &pressure_handle );
-//
-  xTaskCreate( clock			, "CLOCK_TASK"				, 200, NULL, 1, &clock_handle );
-  xTaskCreate( door				, "DOOR_TASK"				, 120, NULL, 1, &door_handle );
-  xTaskCreate( car				, "CAR_TASK"				, 120, NULL, 1, &car_handle );
 
-  xTaskCreate( TX_radio			, "RADIO_TRANSMIT_TASK"		, 200, NULL, 1, &tx_handle );
-  xTaskCreate( RX_radio			, "RADIO_RECEIVE_TASK"		, 200, NULL, 1, &rx_handle );
+  xTaskCreate( TX_radio			, "RADIO_TRANSMIT_TASK"		, 250, NULL, 1, &tx_handle );
+  xTaskCreate( RX_radio			, "RADIO_RECEIVE_TASK"		, 250, NULL, 1, &rx_handle );
+  xTaskCreate( pressure			, "PRESSURE_TASK"			, 230, NULL, 1, &pressure_handle );
+  xTaskCreate( clock			, "CLOCK_TASK"				, 220, NULL, 1, &clock_handle );
+
+  xTaskCreate( door				, "DOOR_TASK"				, 90, NULL, 1, &door_handle );
+  xTaskCreate( car				, "CAR_TASK"				, 90, NULL, 1, &car_handle );
+  xTaskCreate( carbon_sensor	, "CARBON_SENSOR_TASK" 		, 100, NULL, 1, &carbon_sensor_handle );
+
+  xTaskCreate( light_kitchen	, "LIGHT_KITCHEN_TASK"		, 70, NULL, 1, &light_kit_handle );
+  xTaskCreate( light_hall		, "LIGHT_HALL_TASK"			, 70, NULL, 1, &light_hall_handle );
+  xTaskCreate( light_garage		, "LIGHT_GARAGE_TASK"		, 70, NULL, 1, &light_gar_handle );
+
+//  xTaskCreate( sun_tracker		, "SUN_TRACKER_TASK"		, 150, NULL, 1, &sun_tracker_handle);
 
   vTaskStartScheduler();
 

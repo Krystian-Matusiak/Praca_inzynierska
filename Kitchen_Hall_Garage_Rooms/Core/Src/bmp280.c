@@ -88,18 +88,18 @@ void setConstants(){
 	  read_data(&reg_P8l, dig_P82,2);
 	  read_data(&reg_P9l, dig_P92,2);
 
-	  dig_T1 = (uint16_t) ((uint16_t)dig_T12[0] | ( (uint16_t) ((uint16_t)dig_T12[1]<<8)));
-	  dig_T2 = (int16_t)  ((int16_t)dig_T22[0]  | ( (int16_t)  ((int16_t)dig_T22[1]<<8)));
-	  dig_T3 = (int16_t)  ((int16_t)dig_T32[0]  | ( (int16_t)  ((int16_t)dig_T32[1]<<8)));
-	  dig_P1 = (uint16_t) ((uint16_t)dig_P12[0] | ( (uint16_t) ((uint16_t)dig_P12[1]<<8)));
-	  dig_P2 = (int16_t)  ((int16_t)dig_P22[0]  | ( (int16_t)  ((int16_t)dig_P22[1]<<8)));
-	  dig_P3 = (int16_t)  ((int16_t)dig_P32[0]  | ( (int16_t)  ((int16_t)dig_P32[1]<<8)));
-	  dig_P4 = (int16_t)  ((int16_t)dig_P42[0]  | ( (int16_t)  ((int16_t)dig_P42[1]<<8)));
-	  dig_P5 = (int16_t)  ((int16_t)dig_P52[0]  | ( (int16_t)  ((int16_t)dig_P52[1]<<8)));
-	  dig_P6 = (int16_t)  ((int16_t)dig_P62[0]  | ( (int16_t)  ((int16_t)dig_P62[1]<<8)));
-	  dig_P7 = (int16_t)  ((int16_t)dig_P72[0]  | ( (int16_t)  ((int16_t)dig_P72[1]<<8)));
-	  dig_P8 = (int16_t)  ((int16_t)dig_P82[0]  | ( (int16_t)  ((int16_t)dig_P82[1]<<8)));
-	  dig_P9 = (int16_t)  ((int16_t)dig_P92[0]  | ( (int16_t)  ((int16_t)dig_P92[1]<<8)));
+	  dig_T1 = (uint16_t) ((uint16_t)dig_T12[0] | ( (uint16_t) (((uint16_t)dig_T12[1])<<8)));
+	  dig_T2 = (int16_t)  ((int16_t)dig_T22[0]  | ( (int16_t)  (((int16_t)dig_T22[1])<<8)));
+	  dig_T3 = (int16_t)  ((int16_t)dig_T32[0]  | ( (int16_t)  (((int16_t)dig_T32[1])<<8)));
+	  dig_P1 = (uint16_t) ((uint16_t)dig_P12[0] | ( (uint16_t) (((uint16_t)dig_P12[1])<<8)));
+	  dig_P2 = (int16_t)  ((int16_t)dig_P22[0]  | ( (int16_t)  (((int16_t)dig_P22[1])<<8)));
+	  dig_P3 = (int16_t)  ((int16_t)dig_P32[0]  | ( (int16_t)  (((int16_t)dig_P32[1])<<8)));
+	  dig_P4 = (int16_t)  ((int16_t)dig_P42[0]  | ( (int16_t)  (((int16_t)dig_P42[1])<<8)));
+	  dig_P5 = (int16_t)  ((int16_t)dig_P52[0]  | ( (int16_t)  (((int16_t)dig_P52[1])<<8)));
+	  dig_P6 = (int16_t)  ((int16_t)dig_P62[0]  | ( (int16_t)  (((int16_t)dig_P62[1])<<8)));
+	  dig_P7 = (int16_t)  ((int16_t)dig_P72[0]  | ( (int16_t)  (((int16_t)dig_P72[1])<<8)));
+	  dig_P8 = (int16_t)  ((int16_t)dig_P82[0]  | ( (int16_t)  (((int16_t)dig_P82[1])<<8)));
+	  dig_P9 = (int16_t)  ((int16_t)dig_P92[0]  | ( (int16_t)  (((int16_t)dig_P92[1])<<8)));
 }
 
 
@@ -109,7 +109,7 @@ void BMP280_setup(){
 
 	uint8_t ctrl_meas_addr = 0x74;
 	uint8_t osrs_p = OSRS_P; // skipped / x1 / x2 / x4 / x8 / x16
-	uint8_t osrs_t = OSRS_P; // skipped / x1 / x2 / x4 / x8 / x16
+	uint8_t osrs_t = OSRS_T; // skipped / x1 / x2 / x4 / x8 / x16
 	uint8_t mode = MODE;    // sleep (00) / forced (01 / 10) / normal (11)
 
 	uint8_t t_sb_filtr_addr = 0x75;
@@ -123,7 +123,7 @@ void BMP280_setup(){
 	uint8_t read_F4=0xF4;
 	uint8_t czytaj=0;
 
-	uint8_t ctrl_meas = mode | osrs_t | osrs_t;
+	uint8_t ctrl_meas =  mode | osrs_p | osrs_t;
 	uint8_t tsb_filtr_msk = t_sb | filter | spi3w_en;
 
 	// MODE
@@ -175,6 +175,12 @@ void get_temp_press(int32_t * temp , uint32_t * press){
 	  uint8_t reg_press = BMP280_REG_PRESS_MSB;
 	  uint8_t reg_temp = BMP280_REG_TEMP_MSB;
 
+	  // Temperatura
+	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
+	  HAL_SPI_Transmit(&hspi3, &reg_temp, 1, 200);
+	  HAL_SPI_Receive(&hspi3, &T[0], 3, 200);
+	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
+
 	  // Ciśnienie
 	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
 	  HAL_SPI_Transmit(&hspi3, &reg_press, 1, 200);
@@ -183,33 +189,21 @@ void get_temp_press(int32_t * temp , uint32_t * press){
 	  HAL_Delay(200);
 
 
-//	  uint8_t reset=0xE0 & 0x7F;
-//	  uint8_t zero=0xB6;
-//	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
-//	  HAL_SPI_Transmit(&hspi3, &reset, 1, 200);
-//	  HAL_SPI_Receive(&hspi3, &zero, 3, 200);
-//	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
-//	  HAL_Delay(100);
 
 	  // All
-	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
-	  HAL_SPI_Transmit(&hspi3, &reg_press, 1, 200);
-	  HAL_SPI_Receive(&hspi3, &A[0], 6, 200);
-	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
-	  HAL_Delay(200);
+//	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
+//	  HAL_SPI_Transmit(&hspi3, &reg_press, 1, 200);
+//	  HAL_SPI_Receive(&hspi3, &A[0], 6, 200);
+//	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
+//	  HAL_Delay(200);
 
 
-	  // Temperatura
-	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
-	  HAL_SPI_Transmit(&hspi3, &reg_temp, 1, 200);
-	  HAL_SPI_Receive(&hspi3, &T[0], 3, 200);
-	  HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
 
 
 	  PP = ((uint32_t)( (uint16_t) ((uint16_t)P[0] << 8) | (uint16_t)P[1]) << 4) | ((uint16_t)P[2] >>4    ) ;
 	  TT = ((uint32_t)( (uint16_t) ((uint16_t)T[0] << 8) | (uint16_t)T[1]) << 4) | (uint16_t)(T[2] >>4    ) ;
-	  At = ((uint32_t)( (uint16_t) ((uint16_t)A[3] << 8) | (uint16_t)A[4]) << 4) | (uint16_t)(A[5] >>4    ) ;
-	  Ap = ((uint32_t)( (uint16_t) ((uint16_t)A[0] << 8) | (uint16_t)A[1]) << 4) | (uint16_t)(A[2] >>4    ) ;
+//	  At = ((uint32_t)( (uint16_t) ((uint16_t)A[3] << 8) | (uint16_t)A[4]) << 4) | (uint16_t)(A[5] >>4    ) ;
+//	  Ap = ((uint32_t)( (uint16_t) ((uint16_t)A[0] << 8) | (uint16_t)A[1]) << 4) | (uint16_t)(A[2] >>4    ) ;
 
 	  HAL_Delay(300);
 
@@ -217,6 +211,11 @@ void get_temp_press(int32_t * temp , uint32_t * press){
 //	  dig_T1 = 28704;
 //	  dig_T2 = 26435;
 //	  dig_T3 = -1000;
+
+	  dig_T1 = 28800;
+	  dig_T2 = 26435;
+	  dig_T3 = -1000;
+
 //   TEMP
 
 	  var1 = ((((TT>>3)-((int32_t)dig_T1<<1))) *((int32_t)dig_T2))>>11;
@@ -250,12 +249,33 @@ void get_temp_press(int32_t * temp , uint32_t * press){
 
 //	  printf(" P: ( %d , %d , %d ) \r\n", P[0] , P[1] , P[2] );
 //	  printf(" T: ( %d , %d , %d ) \r\n", T[0] , T[1] , T[2] );
-//	  printf(" AP: ( %d , %d , %d ) \r\n", A[0] , A[1] , A[2] );
-//	  printf(" AT: ( %d , %d , %d ) \r\n", A[3] , A[4] , A[5] );
 //	  printf(" CISNIENIE : %d hPa \r\n", (int)PP );
 //	  printf(" TEMPERATURA: %d *C \r\n", (int)TT );
+
+//	  printf("digital T1: %d \r\n", dig_T1 );
+//	  printf("digital T2: %d \r\n", dig_T2 );
+//	  printf("digital T3: %d \r\n", dig_T3 );
+//	  printf("digital P1: %d \r\n", dig_P1 );
+//	  printf("digital P2: %d \r\n", dig_P2 );
+//	  printf("digital P3: %d \r\n", dig_P3 );
+//	  printf("digital P4: %d \r\n", dig_P4 );
+//	  printf("digital P5: %d \r\n", dig_P5 );
+//	  printf("digital P6: %d \r\n", dig_P6 );
+//	  printf("digital P7: %d \r\n", dig_P7 );
+//	  printf("digital P8: %d \r\n", dig_P8 );
+//	  printf("digital P9: %d \r\n", dig_P9 );
+
 }
 
+void reset(){
+	uint8_t reg_reset=0xE0 & 0x7F;
+	uint8_t value_reset=0xB6;
+
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_RESET);
+	HAL_SPI_Transmit(&hspi3, &reg_reset, 1, 200);
+	HAL_SPI_Receive(&hspi3, &value_reset, 1, 200);
+	HAL_GPIO_WritePin(CS_BMP_GPIO_Port, CS_BMP_Pin, GPIO_PIN_SET);
+}
 
 
 

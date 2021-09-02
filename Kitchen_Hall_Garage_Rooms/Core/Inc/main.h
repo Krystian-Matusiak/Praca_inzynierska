@@ -68,8 +68,6 @@ void Error_Handler(void);
 #define SUN_LEFT_GPIO_Port GPIOC
 #define CAR_Pin GPIO_PIN_4
 #define CAR_GPIO_Port GPIOC
-#define CS_BMP_Pin GPIO_PIN_5
-#define CS_BMP_GPIO_Port GPIOC
 #define CS_LORA_Pin GPIO_PIN_0
 #define CS_LORA_GPIO_Port GPIOB
 #define RST_Pin GPIO_PIN_1
@@ -94,8 +92,8 @@ void Error_Handler(void);
 #define CM_BUZZER_GPIO_Port GPIOE
 #define DOOR_Pin GPIO_PIN_15
 #define DOOR_GPIO_Port GPIOE
-#define CS_PRESS_Pin GPIO_PIN_10
-#define CS_PRESS_GPIO_Port GPIOB
+#define CS_BMP_Pin GPIO_PIN_10
+#define CS_BMP_GPIO_Port GPIOB
 #define PWM_TOP_Pin GPIO_PIN_13
 #define PWM_TOP_GPIO_Port GPIOB
 #define PWM_BOTTOM_Pin GPIO_PIN_14

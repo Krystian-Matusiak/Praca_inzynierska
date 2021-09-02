@@ -4,5 +4,6 @@ RTC.c:30:6:Send_Command	24	static
 RTC.c:45:6:Write_Byte	24	static
 RTC.c:66:9:Read_Byte	24	static
 RTC.c:92:6:Write_Time	16	static
-RTC.c:111:6:Read_Time	24	static
-RTC.c:130:6:RTC_Init	32	static
+RTC.c:110:6:Write_Zero_Seconds	8	static
+RTC.c:120:6:Read_Time	24	static
+RTC.c:139:6:RTC_Init	32	static

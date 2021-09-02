@@ -22,7 +22,6 @@
 #include "cmsis_os.h"
 #include "adc.h"
 #include "spi.h"
-#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -47,7 +46,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 
-#define TEMP_THRESHOLD 27
+#define TEMP_THRESHOLD 24
 #define HUMID_THRESHOLD 80
 
 #define STM32F303K8_DEVICE 0x03
@@ -91,7 +90,7 @@ uint8_t isAlarmOff=0;
 // -------------------------------------
 // Variables related with temperature and humidity
 
-uint8_t temperature=30;
+uint8_t temperature=0;
 
 uint8_t humidity_measure=0;
 uint8_t humidity=0;
@@ -99,14 +98,15 @@ uint8_t humidity=0;
 // -------------------------------------
 // Variables related with data and time
 
-uint8_t hours=10;
-uint8_t minutes=0;
-uint8_t seconds=0;
+uint8_t hours=-1;
+uint8_t minutes=-1;
+uint8_t day=-1;
+uint8_t month=-1;
 
-uint8_t day=0;
-uint8_t month=0;
-uint8_t year=0;
-uint8_t day_week=0;
+uint8_t alarm_hours=0;
+uint8_t alarm_minutes=0;
+uint8_t alarm_day=0;
+uint8_t alarm_month=0;
 
 
 // -------------------------------------
@@ -116,16 +116,15 @@ uint8_t day_week=0;
 // tx_frame : | device | humidity | livingroom | bathroom | bedroom | alarm switch-off | alarm active |  fan  |
 //				  8bit      8bit	   	1bit		1bit		1bit		  1bit				1bit	 1bit
 
-uint8_t tx_frame[3] = { 0x03 , 0x00 , 0b01000000 };
-uint8_t rx_frame[11]= {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 };
+uint8_t tx_frame[3] = { 0x03 , 0x00 , 0b00000000 };
+uint8_t rx_frame[15]= {0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0 ,0};
 
 char tx_test[256] = "TEST FreeRTOS 303!      ";
 
-enum devices {begin, RPi , STM32_F4 , STM32_F3 , end};
-enum devices curr_dev=begin;
 
 // Continuous updatable time buffor
 uint8_t buffor[8] = {0,1,2,3,4,5,6,7};
+
 // Current time send
 uint8_t real_time[8] = { 1 , 21 , 7 , 3 , 13 , 20 , 0 ,2};
 
@@ -217,7 +216,6 @@ void light_bedroom   	(void *pvParameters){
 
 void ceiling_fan 	 	(void *pvParameters){
 	while(1){
-
 		if( temperature > TEMP_THRESHOLD ){
 			HAL_GPIO_WritePin(FAN_GPIO_Port, FAN_Pin, GPIO_PIN_SET);
 			tx_frame[2] = tx_frame[2] | 1;
@@ -248,70 +246,112 @@ void flood_protection 	(void *pvParameters){
 		  else
 			HAL_GPIO_WritePin(FLOOD_ALARM_GPIO_Port, FLOOD_ALARM_Pin, GPIO_PIN_RESET);
 
+//		if( rx_frame[0] == 0x02){
+//			printf("STM32F411 data = %d - %d - %d - %d \r\n" , rx_frame[4], rx_frame[5], rx_frame[8], rx_frame[7]);
+//			printf("alarm = %d - %d - %d - %d\r\n" , alarm_day, alarm_month, alarm_hours, alarm_minutes);
+//		}
 	}
 	vTaskDelete(NULL);
 }
 
 void alarm_clock		(void *pvParameters){
-	uint8_t alarm_off=0;
 	while(1){
-		if( !alarm_off && hours == 10 && HAL_GPIO_ReadPin(BUZZER_OFF_GPIO_Port, BUZZER_OFF_Pin) != GPIO_PIN_RESET){
+
+		if( 	!isAlarmOff
+				&& day == alarm_day
+				&& month == alarm_month
+				&& hours == alarm_hours
+				&& minutes == alarm_minutes
+				&& HAL_GPIO_ReadPin(BUZZER_OFF_GPIO_Port, BUZZER_OFF_Pin) != GPIO_PIN_RESET){
+
 			HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_SET);
 			tx_frame[2] = tx_frame[2] | (1<<1);
+			isAlarmOn=1;
+		}
+		if(		day != alarm_day
+				&& month != alarm_month
+				&& hours != alarm_hours
+				&& minutes != alarm_minutes
+				){
+			isAlarmOff=0;
+			tx_frame[2] = tx_frame[2] & ~(1<<2);
 		}
 
-		if( HAL_GPIO_ReadPin(BUZZER_OFF_GPIO_Port, BUZZER_OFF_Pin) == GPIO_PIN_RESET ){
+		if( isAlarmOn && HAL_GPIO_ReadPin(BUZZER_OFF_GPIO_Port, BUZZER_OFF_Pin) == GPIO_PIN_RESET ){
 			HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
 			tx_frame[2] = tx_frame[2] | (1<<2);
 			tx_frame[2] = tx_frame[2] & ~(1<<1);
-			alarm_off = 1;
+			isAlarmOff = 1;
+			isAlarmOn  = 0;
+
+			alarm_day=0;
+			alarm_month=0;
+			alarm_hours=0;
+			alarm_minutes=0;
+
+			vTaskDelay( 200 / portTICK_PERIOD_MS);
+//			alarm_off=0;
 		}
-		else
-			tx_frame[2] = tx_frame[2] & ~(1<<2);
 
 		vTaskDelay( 10 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
 
-int cnt=0;
 void TX_radio(void *pvParameters){
 	vTaskDelay(30 / portTICK_PERIOD_MS);
+	uint32_t time=0;
 	while(1){
+
 		tx_frame[1] = humidity;
-		vTaskDelay( 30 / portTICK_PERIOD_MS);
-		Transmit(tx_frame, sizeof(tx_frame));
+		time = HAL_GetTick();
+		while( HAL_GetTick() - time < 5 ){
+			Transmit(tx_frame, sizeof(tx_frame));
+		}
 
-		HAL_GPIO_WritePin(LIGHT_BATH_GPIO_Port, LIGHT_BATH_Pin, GPIO_PIN_SET);
+//		HAL_GPIO_WritePin(LIGHT_BATH_GPIO_Port, LIGHT_BATH_Pin, GPIO_PIN_SET);
 
-		vTaskDelay( 20 / portTICK_PERIOD_MS);
 		vTaskResume(rx_handle);
 		vTaskSuspend( NULL );
+		vTaskDelay( 1/ portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
 
 void RX_radio(void *pvParameters){
-	unsigned char help[11];
 	uint32_t time=0;
+	set_OPMODE(OPMODE_RX);
 	while(1){
 		vTaskSuspend(tx_handle);
 
-		set_OPMODE(OPMODE_RX_SINGLE);
-		time = HAL_GetTick();
-		while( (HAL_GetTick()-time < 110) &&
-				HAL_GPIO_ReadPin(DIO0_GPIO_Port, DIO0_Pin) == GPIO_PIN_RESET ){
-//				printf("czas --------------------> %d \r\n",HAL_GetTick());
+		set_OPMODE(OPMODE_RX);
+		while(	HAL_GPIO_ReadPin(DIO0_GPIO_Port, DIO0_Pin) != GPIO_PIN_SET){
+//			printf("Waiting \r\n");
 		}
+
 		if( HAL_GPIO_ReadPin(DIO0_GPIO_Port, DIO0_Pin) == GPIO_PIN_SET ){
 			Receive(rx_frame);
-//			rx_frame[0]=0x01;
-//			rx_frame[1]=STM32F303K8_DEVICE;
 
 			if( rx_frame[0] == 0x02 ){
-				printf("dev=%d \t %d:%d:%d \r\n",rx_frame[0] , rx_frame[4], rx_frame[5] , rx_frame[6]);
+				day=rx_frame[7];
+				month=rx_frame[8];
+				hours=rx_frame[4];
+				minutes=rx_frame[5];
+
+				temperature=rx_frame[3];
+				printf("\nSTM32F411 data = %d - %d - %d - %d \r\n" , rx_frame[4], rx_frame[5], rx_frame[8], rx_frame[7]);
+
 			}
+
 			if( rx_frame[0] == 0x01 && rx_frame[1] == STM32F303K8_DEVICE){
+
+				if( !isAlarmOff){
+					alarm_day=rx_frame[2];
+					alarm_month=rx_frame[3];
+					alarm_hours=rx_frame[4];
+					alarm_minutes=rx_frame[5];
+				}
+
 				vTaskResume(tx_handle);
 				vTaskSuspend( NULL );
 
@@ -321,8 +361,9 @@ void RX_radio(void *pvParameters){
 				Write_Reg(REG_IRQ_FLAGS_MASK, ~IRQ_LORA_RXDONE_MASK);
 				Write_Reg(REG_FIFO_RX_BASE_AD, 0x00);
 				Write_Reg(REG_FIFO_ADDR_PTR, 0x00);
+
+				printf("alarm = %d - %d - %d - %d\r\n\n" , alarm_day, alarm_month, alarm_hours, alarm_minutes);
 			}
-			printf("RPI data = %d - %d - %d \r\n" , rx_frame[0], rx_frame[1], rx_frame[2]);
 		}
 		else{
 			printf("No carrier found. \r\n");
@@ -330,6 +371,7 @@ void RX_radio(void *pvParameters){
 		rx_frame[0]=0x00;
 		rx_frame[1]=0x00;
 
+		vTaskDelay(5 / portTICK_PERIOD_MS);
 	}
 	vTaskDelete(NULL);
 }
@@ -368,12 +410,17 @@ int main(void)
   MX_SPI1_Init();
   MX_ADC2_Init();
   MX_USART1_UART_Init();
-  MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
+
+  // Start ADC
   HAL_ADC_Start(&hadc2);
-  LoRa_init(868);
+
+  // Buzzer OFF
   HAL_GPIO_WritePin(BUZZER_GPIO_Port, BUZZER_Pin, GPIO_PIN_RESET);
+
+  // Setting up LoRa
+  LoRa_init(868);
   tx_frame[0] = STM32F303K8_DEVICE;
 
   xTaskCreate( flood_protection , "FLOOD_PROTECTION_TASK"	, 180, NULL, 1, &light_fl_handle );
@@ -381,7 +428,7 @@ int main(void)
   xTaskCreate( RX_radio			, "RADIO_RECEIVE_TASK"		, 250, NULL, 1, &rx_handle );
 
   xTaskCreate( alarm_clock		, "ALARM_CLOCK_TASK"		, 90, NULL, 1, &light_alarm_handle );
-  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 70, NULL, 1, &fan_handle );
+  xTaskCreate( ceiling_fan		, "CEILING_FAN_TASK" 		, 90, NULL, 1, &fan_handle );
 
   xTaskCreate( light_livingroom	, "LIGHT_LIVINGROOM_TASK"	, 70, NULL, 1, &light_liv_handle );
   xTaskCreate( light_bathroom	, "LIGHT_BATHROOM_TASK"		, 70, NULL, 1, &light_bath_handle );

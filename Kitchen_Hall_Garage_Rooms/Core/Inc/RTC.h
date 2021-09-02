@@ -37,6 +37,7 @@ void Send_Command(uint8_t command);
 void Write_Byte(uint8_t address, uint8_t value);
 uint8_t Read_Byte(uint8_t address);
 
+void Write_Zero_Seconds();
 void Write_Time(uint8_t *buffor);
 void Read_Time(uint8_t *buffor);
 

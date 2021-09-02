@@ -107,6 +107,15 @@ void Write_Time(uint8_t *buffor)
 	HAL_Delay(1);
 }
 
+void Write_Zero_Seconds(){
+	Write_Byte(REG_CONTROL,0x00);
+	HAL_Delay(1);
+
+	Write_Byte(REG_SEC,HEX_to_BCD(0));
+
+	Write_Byte(REG_CONTROL,0x80);
+	HAL_Delay(1);
+}
 
 void Read_Time(uint8_t *buffor){
    	uint8_t Temp;
