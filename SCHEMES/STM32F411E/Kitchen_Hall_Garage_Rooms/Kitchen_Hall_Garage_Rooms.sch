@@ -208,10 +208,10 @@ Wire Wire Line
 Text GLabel 5150 4700 0    50   Input ~ 0
 MOTION_GARAGE
 $Comp
-L Device:Buzzer BZ?
+L Device:Buzzer BZ
 U 1 1 60ECED63
 P 6500 1400
-F 0 "BZ?" H 6652 1429 50  0000 L CNN
+F 0 "BZ" H 6652 1429 50  0000 L CNN
 F 1 "Buzzer" H 6652 1338 50  0000 L CNN
 F 2 "" V 6475 1500 50  0001 C CNN
 F 3 "~" V 6475 1500 50  0001 C CNN
@@ -299,12 +299,12 @@ Wire Notes Line
 $Comp
 L Sensor_Pressure:BMP280 U2
 U 1 1 60ED6505
-P 9100 1600
-F 0 "U2" H 9330 1696 50  0000 L CNN
-F 1 "BMP280" H 9330 1605 50  0000 L CNN
-F 2 "Package_LGA:Bosch_LGA-8_2x2.5mm_P0.65mm_ClockwisePinNumbering" H 9100 900 50  0001 C CNN
-F 3 "https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMP280-DS001.pdf" H 9100 1600 50  0001 C CNN
-	1    9100 1600
+P 9400 1700
+F 0 "U2" H 9630 1796 50  0000 L CNN
+F 1 "BMP280" H 9630 1705 50  0000 L CNN
+F 2 "Package_LGA:Bosch_LGA-8_2x2.5mm_P0.65mm_ClockwisePinNumbering" H 9400 1000 50  0001 C CNN
+F 3 "https://ae-bst.resource.bosch.com/media/_tech/media/datasheets/BST-BMP280-DS001.pdf" H 9400 1700 50  0001 C CNN
+	1    9400 1700
 	1    0    0    -1  
 $EndComp
 $Comp
@@ -370,93 +370,54 @@ Connection ~ 2900 1150
 Text Notes 1100 850  0    79   ~ 0
 STM32F411E
 Wire Notes Line
-	1050 700  1050 7200
+	950  700  950  7200
 Wire Notes Line
-	1050 7200 4050 7200
-Wire Notes Line
-	4050 7200 4050 700 
-Wire Notes Line
-	4050 700  1050 700 
+	4150 7200 4150 700 
 $Comp
 L power:GND #PWR?
 U 1 1 60EE752F
-P 9200 1900
-F 0 "#PWR?" H 9200 1650 50  0001 C CNN
-F 1 "GND" H 9205 1727 50  0000 C CNN
-F 2 "" H 9200 1900 50  0001 C CNN
-F 3 "" H 9200 1900 50  0001 C CNN
-	1    9200 1900
+P 9500 2000
+F 0 "#PWR?" H 9500 1750 50  0001 C CNN
+F 1 "GND" H 9505 1827 50  0000 C CNN
+F 2 "" H 9500 2000 50  0001 C CNN
+F 3 "" H 9500 2000 50  0001 C CNN
+	1    9500 2000
 	1    0    0    -1  
 $EndComp
 Wire Wire Line
-	9100 1200 9200 1200
+	9400 1300 9500 1300
 Wire Wire Line
-	9100 1900 9200 1900
-Connection ~ 9200 1900
-Text GLabel 8700 1400 0    50   Input ~ 0
-SPI_SCK
-Text GLabel 8700 1600 0    50   Input ~ 0
-SPI_MISO
-Text GLabel 8700 1500 0    50   Input ~ 0
-SPI_MOSI
-Text GLabel 8700 1700 0    50   Input ~ 0
+	9400 2000 9500 2000
+Connection ~ 9500 2000
+Text GLabel 9000 1500 0    50   Input ~ 0
+SPI_SCK_BMP
+Text GLabel 9000 1700 0    50   Input ~ 0
+SPI_MISO_BMP
+Text GLabel 9000 1600 0    50   Input ~ 0
+SPI_MOSI_BMP
+Text GLabel 9000 1800 0    50   Input ~ 0
 CS_BMP
-$Comp
-L RTC_LIB2:MSX_DS1307 U3
-U 1 1 60EF4DD9
-P 8900 2200
-F 0 "U3" H 9078 2001 50  0000 L CNN
-F 1 "MSX_DS1307" H 9078 1910 50  0000 L CNN
-F 2 "" H 8900 2350 50  0001 C CNN
-F 3 "" H 8900 2350 50  0001 C CNN
-	1    8900 2200
-	1    0    0    -1  
-$EndComp
 $Comp
 L power:GND #PWR?
 U 1 1 60EF6D7D
-P 8650 2200
-F 0 "#PWR?" H 8650 1950 50  0001 C CNN
-F 1 "GND" H 8655 2027 50  0000 C CNN
-F 2 "" H 8650 2200 50  0001 C CNN
-F 3 "" H 8650 2200 50  0001 C CNN
-	1    8650 2200
+P 9900 2350
+F 0 "#PWR?" H 9900 2100 50  0001 C CNN
+F 1 "GND" H 9905 2177 50  0000 C CNN
+F 2 "" H 9900 2350 50  0001 C CNN
+F 3 "" H 9900 2350 50  0001 C CNN
+	1    9900 2350
 	-1   0    0    1   
 $EndComp
-$Comp
-L power:+5V #PWR?
-U 1 1 60EF706F
-P 8650 2650
-F 0 "#PWR?" H 8650 2500 50  0001 C CNN
-F 1 "+5V" H 8665 2823 50  0000 C CNN
-F 2 "" H 8650 2650 50  0001 C CNN
-F 3 "" H 8650 2650 50  0001 C CNN
-	1    8650 2650
-	-1   0    0    1   
-$EndComp
-Wire Wire Line
-	8650 2200 8650 2250
-Connection ~ 9100 1200
+Connection ~ 9400 1300
 $Comp
 L power:+3V3 #PWR?
 U 1 1 60EE7A64
-P 9100 1200
-F 0 "#PWR?" H 9100 1050 50  0001 C CNN
-F 1 "+3V3" H 9115 1373 50  0000 C CNN
-F 2 "" H 9100 1200 50  0001 C CNN
-F 3 "" H 9100 1200 50  0001 C CNN
-	1    9100 1200
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:+3V3 #PWR?
-U 1 1 60EFBB2F
-P 10000 1700
-F 0 "#PWR?" H 10000 1550 50  0001 C CNN
-F 1 "+3V3" H 10015 1873 50  0000 C CNN
-F 2 "" H 10000 1700 50  0001 C CNN
-F 3 "" H 10000 1700 50  0001 C CNN
-	1    10000 1700
+P 9400 1300
+F 0 "#PWR?" H 9400 1150 50  0001 C CNN
+F 1 "+3V3" H 9415 1473 50  0000 C CNN
+F 2 "" H 9400 1300 50  0001 C CNN
+F 3 "" H 9400 1300 50  0001 C CNN
+	1    9400 1300
 	1    0    0    -1  
 $EndComp
 Text Notes 7300 1050 0    79   ~ 0
@@ -491,34 +452,10 @@ Wire Wire Line
 	6350 4700 6350 4800
 Text GLabel 5950 4700 0    50   Input ~ 0
 CAR
-Text GLabel 10300 2000 2    50   Input ~ 0
-TEMP_HUMID
-$Comp
-L power:GND #PWR?
-U 1 1 60EFA0DC
-P 10000 2300
-F 0 "#PWR?" H 10000 2050 50  0001 C CNN
-F 1 "GND" H 10005 2127 50  0000 C CNN
-F 2 "" H 10000 2300 50  0001 C CNN
-F 3 "" H 10000 2300 50  0001 C CNN
-	1    10000 2300
-	1    0    0    -1  
-$EndComp
-$Comp
-L Sensor:DHT11 U4
-U 1 1 60EF8DD5
-P 10000 2000
-F 0 "U4" H 9756 2046 50  0000 R CNN
-F 1 "DHT11" H 9756 1955 50  0000 R CNN
-F 2 "Sensor:Aosong_DHT11_5.5x12.0_P2.54mm" H 10000 1600 50  0001 C CNN
-F 3 "http://akizukidenshi.com/download/ds/aosong/DHT11.pdf" H 10150 2250 50  0001 C CNN
-	1    10000 2000
-	1    0    0    -1  
-$EndComp
 Wire Notes Line
 	10900 3100 7250 3100
 Wire Notes Line
-	7300 950  10950 950 
+	7250 900  10900 900 
 Wire Notes Line
 	4350 3100 7000 3100
 Wire Notes Line
@@ -609,9 +546,9 @@ Wire Wire Line
 	9250 4000 9250 3650
 Connection ~ 9250 3650
 Text GLabel 9150 3900 0    50   Input ~ 0
-SERVO_BOTTOM
+PWM_BOTTOM
 Text GLabel 9150 3550 0    50   Input ~ 0
-SERVO_TOP
+PWM_TOP
 Wire Wire Line
 	9150 3550 9350 3550
 Wire Wire Line
@@ -629,8 +566,6 @@ F 3 "" H 7450 5100 50  0001 C CNN
 	1    7450 5100
 	1    0    0    -1  
 $EndComp
-Text GLabel 7300 4800 0    50   Input ~ 0
-LIGHT_UP
 $Comp
 L Device:R R4.1
 U 1 1 60F4A85F
@@ -679,7 +614,7 @@ F 3 "" H 10000 5100 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Text GLabel 9850 4800 0    50   Input ~ 0
-LIGHT_RIGHT
+SUN_RIGHT
 $Comp
 L Device:R R4.4
 U 1 1 60F4F530
@@ -716,8 +651,6 @@ F 3 "" H 8300 5100 50  0001 C CNN
 	1    8300 5100
 	1    0    0    -1  
 $EndComp
-Text GLabel 8150 4800 0    50   Input ~ 0
-LIGHT_DOWN
 $Comp
 L Device:R R4.2
 U 1 1 60F56895
@@ -755,7 +688,7 @@ F 3 "" H 9150 5100 50  0001 C CNN
 	1    0    0    -1  
 $EndComp
 Text GLabel 9000 4800 0    50   Input ~ 0
-LIGHT_LEFT
+SUN_LEFT
 $Comp
 L Device:R R4.3
 U 1 1 60F57C6F
@@ -787,4 +720,195 @@ Wire Notes Line
 	10550 5400 6750 5400
 Wire Notes Line
 	6750 5400 6750 3250
+Text Notes 4600 5450 0    79   ~ 0
+Radio Module\n
+Wire Notes Line
+	4550 5300 6550 5300
+Wire Notes Line
+	6550 5300 6550 7000
+Wire Notes Line
+	6550 7000 4550 7000
+Wire Notes Line
+	4550 7000 4550 5300
+$Comp
+L power:+3.3V #PWR?
+U 1 1 61844B1E
+P 6100 5600
+F 0 "#PWR?" H 6100 5450 50  0001 C CNN
+F 1 "+3.3V" H 6115 5773 50  0000 C CNN
+F 2 "" H 6100 5600 50  0001 C CNN
+F 3 "" H 6100 5600 50  0001 C CNN
+	1    6100 5600
+	1    0    0    -1  
+$EndComp
+Text GLabel 5150 5800 0    50   Input ~ 0
+SPI1_SCK
+Text GLabel 5150 6000 0    50   Input ~ 0
+SPI1_MISO
+Text GLabel 5150 5900 0    50   Input ~ 0
+SPI1_MOSI
+Text GLabel 5150 6300 0    50   Input ~ 0
+RST
+Text GLabel 5150 6100 0    50   Input ~ 0
+CS_LORA
+$Comp
+L power:GND #PWR?
+U 1 1 61844B29
+P 5750 6700
+F 0 "#PWR?" H 5750 6450 50  0001 C CNN
+F 1 "GND" H 5755 6527 50  0000 C CNN
+F 2 "" H 5750 6700 50  0001 C CNN
+F 3 "" H 5750 6700 50  0001 C CNN
+	1    5750 6700
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6100 5600 5650 5600
+Text GLabel 6150 6500 2    50   Input ~ 0
+DIO0
+Text GLabel 3500 1950 2    50   Input ~ 0
+SPI1_SCK
+Text GLabel 3500 2050 2    50   Input ~ 0
+SPI1_MISO
+Text GLabel 3500 2150 2    50   Input ~ 0
+SPI1_MOSI
+Text GLabel 3500 5150 2    50   Input ~ 0
+CAR
+Text GLabel 3500 3150 2    50   Input ~ 0
+CS_LORA
+Connection ~ 5750 6700
+Connection ~ 5650 6700
+Wire Wire Line
+	5650 6700 5750 6700
+Wire Wire Line
+	5550 6700 5650 6700
+Text GLabel 3500 3350 2    50   Input ~ 0
+DIO0
+Text GLabel 3500 3250 2    50   Input ~ 0
+RST
+$Comp
+L RF_Module:RFM95W-868S2 U2
+U 1 1 61844B18
+P 5650 6100
+F 0 "U2" H 5650 6781 50  0000 C CNN
+F 1 "RFM95W-868S2" H 5650 6690 50  0000 C CNN
+F 2 "" H 2350 7750 50  0001 C CNN
+F 3 "https://www.hoperf.com/data/upload/portal/20181127/5bfcbea20e9ef.pdf" H 2350 7750 50  0001 C CNN
+	1    5650 6100
+	1    0    0    -1  
+$EndComp
+Text GLabel 1700 3750 0    50   Input ~ 0
+MOTION_KITCHEN
+Text GLabel 1700 3850 0    50   Input ~ 0
+MOTION_HALL
+Text GLabel 1700 3950 0    50   Input ~ 0
+MOTION_GARAGE
+Text GLabel 1700 4050 0    50   Input ~ 0
+LIGHT_KITCHEN
+Text GLabel 1700 4150 0    50   Input ~ 0
+LIGHT_HALL
+Text GLabel 1700 4250 0    50   Input ~ 0
+LIGHT_GARAGE
+Text GLabel 3500 4150 2    50   Input ~ 0
+CS_BMP
+Text GLabel 1700 4350 0    50   Input ~ 0
+CM_ALARM_OFF
+Text GLabel 1700 4450 0    50   Input ~ 0
+BUZZER
+$Comp
+L Switch:SW_DPST_x2 SW_Door
+U 1 1 6185CC4B
+P 8900 2550
+F 0 "SW_Door" H 8900 2785 50  0000 C CNN
+F 1 "SW_DPST" H 8900 2694 50  0000 C CNN
+F 2 "" H 8900 2550 50  0001 C CNN
+F 3 "~" H 8900 2550 50  0001 C CNN
+	1    8900 2550
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:GND #PWR?
+U 1 1 6185CC51
+P 9100 2650
+F 0 "#PWR?" H 9100 2400 50  0001 C CNN
+F 1 "GND" H 9105 2477 50  0000 C CNN
+F 2 "" H 9100 2650 50  0001 C CNN
+F 3 "" H 9100 2650 50  0001 C CNN
+	1    9100 2650
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9100 2550 9100 2650
+Text GLabel 8700 2550 0    50   Input ~ 0
+DOOR
+Text GLabel 1700 4550 0    50   Input ~ 0
+DOOR
+Text GLabel 3500 4250 2    50   Input ~ 0
+SPI_SCK_BMP
+Text GLabel 3500 5850 2    50   Input ~ 0
+SPI_MISO_BMP
+Text GLabel 3500 5950 2    50   Input ~ 0
+SPI_MOSI_BMP
+Wire Notes Line
+	950  7200 4150 7200
+Wire Notes Line
+	950  700  4150 700 
+Text GLabel 7300 4800 0    50   Input ~ 0
+SUN_UP
+Text GLabel 8150 4800 0    50   Input ~ 0
+SUN_DOWN
+Text GLabel 3500 4950 2    50   Input ~ 0
+SUN_RIGHT
+Text GLabel 3500 4750 2    50   Input ~ 0
+SUN_UP
+Text GLabel 3500 4850 2    50   Input ~ 0
+SUN_DOWN
+Text GLabel 3500 5050 2    50   Input ~ 0
+SUN_LEFT
+Text GLabel 3500 4350 2    50   Input ~ 0
+PWM_TOP
+Text GLabel 3500 4450 2    50   Input ~ 0
+PWM_BOTTOM
+$Comp
+L Timer_RTC:DS1302 U3
+U 1 1 6187BE08
+P 10400 2350
+F 0 "U3" H 10578 2151 50  0000 L CNN
+F 1 "DS1302" H 10578 2060 50  0000 L CNN
+F 2 "" H 10400 2500 50  0001 C CNN
+F 3 "" H 10400 2500 50  0001 C CNN
+	1    10400 2350
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3V #PWR?
+U 1 1 6188303D
+P 10100 2350
+F 0 "#PWR?" H 10100 2200 50  0001 C CNN
+F 1 "+3.3V" H 10115 2523 50  0000 C CNN
+F 2 "" H 10100 2350 50  0001 C CNN
+F 3 "" H 10100 2350 50  0001 C CNN
+	1    10100 2350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	10100 2350 10100 2400
+Wire Wire Line
+	10100 2400 10150 2400
+Wire Wire Line
+	9900 2500 10150 2500
+Wire Wire Line
+	9900 2350 9900 2500
+Text GLabel 3500 5450 2    50   Input ~ 0
+SDA_RTC
+Text GLabel 3500 5350 2    50   Input ~ 0
+SCLK_RTC
+Text GLabel 3500 5550 2    50   Input ~ 0
+RST_RTC
+Text GLabel 10150 2700 0    50   Input ~ 0
+SDA_RTC
+Text GLabel 10150 2600 0    50   Input ~ 0
+SCLK_RTC
+Text GLabel 10150 2800 0    50   Input ~ 0
+RST_RTC
 $EndSCHEMATC

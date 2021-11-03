@@ -162,37 +162,31 @@ Text GLabel 3250 2350 2    50   Input ~ 0
 FAN
 Text GLabel 3250 2250 2    50   Input ~ 0
 BUZZER
-Text GLabel 3250 2450 2    50   Input ~ 0
-CS_NRF
 Text GLabel 3250 2550 2    50   Input ~ 0
 FLOOD_ALARM
 Text GLabel 3250 2650 2    50   Input ~ 0
 HUMIDITY
-Text GLabel 3250 2750 2    50   Input ~ 0
+Text GLabel 2150 3350 0    50   Input ~ 0
 SPI1_SCK
-Text GLabel 3250 2850 2    50   Input ~ 0
+Text GLabel 2150 3450 0    50   Input ~ 0
 SPI1_MISO
-Text GLabel 3250 2950 2    50   Input ~ 0
+Text GLabel 2150 3550 0    50   Input ~ 0
 SPI1_MOSI
 Text GLabel 3250 3050 2    50   Input ~ 0
-TxEN
-Text GLabel 3250 3350 2    50   Input ~ 0
-DR
+RST
 Text GLabel 3250 3450 2    50   Input ~ 0
 BUZZER_OFF
-Text GLabel 2150 2850 0    50   Input ~ 0
+Text GLabel 3250 2850 2    50   Input ~ 0
 MOTION_BATH
-Text GLabel 2150 2950 0    50   Input ~ 0
+Text GLabel 3250 2750 2    50   Input ~ 0
 MOTION_LIVING
-Text GLabel 2150 3150 0    50   Input ~ 0
-LIGHT_BED
-Text GLabel 2150 3250 0    50   Input ~ 0
+Text GLabel 3250 2950 2    50   Input ~ 0
 MOTION_BED
-Text GLabel 2150 3450 0    50   Input ~ 0
-CD
-Text GLabel 2150 3550 0    50   Input ~ 0
-AM
-Text GLabel 2150 3650 0    50   Input ~ 0
+Text GLabel 3250 3350 2    50   Input ~ 0
+CS
+Text GLabel 2150 2950 0    50   Input ~ 0
+DIO0
+Text GLabel 2150 3150 0    50   Input ~ 0
 LIGHT_LIVING
 Text GLabel 2150 3750 0    50   Input ~ 0
 LIGHT_BATH
@@ -552,70 +546,6 @@ Wire Notes Line
 	6900 5450 4550 5450
 Wire Notes Line
 	4550 3550 4550 5450
-$Comp
-L Living_Bath_Bed_Rooms-rescue:nRF905-nrf_custom2 n1
-U 1 1 60EC89FE
-P 9050 4300
-F 0 "n1" H 9050 4465 50  0000 C CNN
-F 1 "nRF905" H 9050 4374 50  0000 C CNN
-F 2 "" H 9050 4400 50  0001 C CNN
-F 3 "" H 9050 4400 50  0001 C CNN
-	1    9050 4300
-	1    0    0    -1  
-$EndComp
-$Comp
-L power:GND #PWR?
-U 1 1 60ECDF57
-P 9050 5050
-F 0 "#PWR?" H 9050 4800 50  0001 C CNN
-F 1 "GND" H 9055 4877 50  0000 C CNN
-F 2 "" H 9050 5050 50  0001 C CNN
-F 3 "" H 9050 5050 50  0001 C CNN
-	1    9050 5050
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	8750 4950 8700 4950
-Wire Wire Line
-	8700 4950 8700 5050
-Wire Wire Line
-	8700 5050 9050 5050
-Wire Wire Line
-	9350 4950 9400 4950
-Wire Wire Line
-	9400 4950 9400 5050
-Wire Wire Line
-	9400 5050 9050 5050
-Connection ~ 9050 5050
-$Comp
-L power:+3.3V #PWR?
-U 1 1 60ECF864
-P 8700 4050
-F 0 "#PWR?" H 8700 3900 50  0001 C CNN
-F 1 "+3.3V" H 8715 4223 50  0000 C CNN
-F 2 "" H 8700 4050 50  0001 C CNN
-F 3 "" H 8700 4050 50  0001 C CNN
-	1    8700 4050
-	1    0    0    -1  
-$EndComp
-Wire Wire Line
-	8700 4350 8750 4350
-Text GLabel 8750 4850 0    50   Input ~ 0
-SPI1_SCK
-Text GLabel 8750 4750 0    50   Input ~ 0
-SPI1_MISO
-Text GLabel 9350 4750 2    50   Input ~ 0
-SPI1_MOSI
-Text GLabel 9350 4550 2    50   Input ~ 0
-CD
-Text GLabel 8750 4650 0    50   Input ~ 0
-AM
-Text GLabel 9350 4850 2    50   Input ~ 0
-CS_NRF
-Text GLabel 9350 4350 2    50   Input ~ 0
-TxEN
-Text GLabel 9350 4650 2    50   Input ~ 0
-DR
 Text Notes 7950 3800 0    79   ~ 0
 Radio Module\n
 Wire Notes Line
@@ -628,8 +558,6 @@ Wire Notes Line
 	7900 5350 7900 3650
 Text Notes 1400 1750 0    79   ~ 0
 STM32F303K8
-Wire Notes Line
-	1350 1600 1350 4550
 Wire Notes Line
 	1350 4550 4050 4550
 Wire Notes Line
@@ -671,10 +599,61 @@ F 3 "~" H 5200 4400 50  0001 C CNN
 	1    5200 4400
 	0    1    1    0   
 $EndComp
+Wire Notes Line
+	1350 1600 1350 4550
+Text GLabel 2150 3650 0    50   Input ~ 0
+LIGHT_BED
+$Comp
+L RF_Module:RFM95W-868S2 U2
+U 1 1 61830682
+P 9000 4450
+F 0 "U2" H 9000 5131 50  0000 C CNN
+F 1 "RFM95W-868S2" H 9000 5040 50  0000 C CNN
+F 2 "" H 5700 6100 50  0001 C CNN
+F 3 "https://www.hoperf.com/data/upload/portal/20181127/5bfcbea20e9ef.pdf" H 5700 6100 50  0001 C CNN
+	1    9000 4450
+	1    0    0    -1  
+$EndComp
+$Comp
+L power:+3.3V #PWR?
+U 1 1 60ECF864
+P 9450 3950
+F 0 "#PWR?" H 9450 3800 50  0001 C CNN
+F 1 "+3.3V" H 9465 4123 50  0000 C CNN
+F 2 "" H 9450 3950 50  0001 C CNN
+F 3 "" H 9450 3950 50  0001 C CNN
+	1    9450 3950
+	1    0    0    -1  
+$EndComp
+Text GLabel 8500 4150 0    50   Input ~ 0
+SPI1_SCK
+Text GLabel 8500 4350 0    50   Input ~ 0
+SPI1_MISO
+Text GLabel 8500 4250 0    50   Input ~ 0
+SPI1_MOSI
+Text GLabel 8500 4650 0    50   Input ~ 0
+RST
+Text GLabel 8500 4450 0    50   Input ~ 0
+CS
+$Comp
+L power:GND #PWR?
+U 1 1 6183A380
+P 9100 5050
+F 0 "#PWR?" H 9100 4800 50  0001 C CNN
+F 1 "GND" H 9105 4877 50  0000 C CNN
+F 2 "" H 9100 5050 50  0001 C CNN
+F 3 "" H 9100 5050 50  0001 C CNN
+	1    9100 5050
+	1    0    0    -1  
+$EndComp
 Wire Wire Line
-	8700 4050 8700 4350
-Text GLabel 8750 4450 0    50   Input ~ 0
-CE
-Text GLabel 9350 4450 2    50   Input ~ 0
-PWR
+	9450 3950 9000 3950
+Wire Wire Line
+	8900 5050 9000 5050
+Wire Wire Line
+	9000 5050 9100 5050
+Connection ~ 9000 5050
+Connection ~ 9100 5050
+Text GLabel 9500 4850 2    50   Input ~ 0
+DIO0
 $EndSCHEMATC
