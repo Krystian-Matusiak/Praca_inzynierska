@@ -1,6 +1,0 @@
-bmp280.c:51:5:read_data	24	static
-bmp280.c:64:5:uread_data	24	static
-bmp280.c:77:6:setConstants	8	static
-bmp280.c:106:6:BMP280_setup	24	static
-bmp280.c:157:6:get_temp_press	72	static
-bmp280.c:270:6:reset	16	static

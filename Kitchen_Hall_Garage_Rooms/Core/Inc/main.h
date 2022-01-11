@@ -94,10 +94,10 @@ void Error_Handler(void);
 #define DOOR_GPIO_Port GPIOE
 #define CS_BMP_Pin GPIO_PIN_10
 #define CS_BMP_GPIO_Port GPIOB
-#define PWM_TOP_Pin GPIO_PIN_13
-#define PWM_TOP_GPIO_Port GPIOB
-#define PWM_BOTTOM_Pin GPIO_PIN_14
-#define PWM_BOTTOM_GPIO_Port GPIOB
+#define PWM_TOP_Pin GPIO_PIN_12
+#define PWM_TOP_GPIO_Port GPIOD
+#define PWM_BOTTOM_Pin GPIO_PIN_13
+#define PWM_BOTTOM_GPIO_Port GPIOD
 #define SCLK_RTC_Pin GPIO_PIN_6
 #define SCLK_RTC_GPIO_Port GPIOC
 #define SDA_RTC_Pin GPIO_PIN_7
